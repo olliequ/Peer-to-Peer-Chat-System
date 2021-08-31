@@ -5,5 +5,6 @@ import com.kvoli.base.Base;
 public class Server {
   public static void main(String[] args) {
     Base.base("server");
+    System.out.println("hi");
   }
 }
