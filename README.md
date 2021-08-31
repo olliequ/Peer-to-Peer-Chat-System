@@ -1,166 +1,101 @@
-# COMP90015 Project Optional JAR Starter
+# Challenge 05
 
+This week we will take a detour to focus on project 1.
 
-- Uses gradle to manage dependencies and build scripts
-- Automatically includes json library jackson
+## RUNNING
 
-Stores the output
+To build the jar files from within Intellij see below. 
+
+![](https://i.imgur.com/MxTCwz3.png)
+![](https://i.imgur.com/xx2cb55.png)
+![](https://i.imgur.com/WE8v3kq.png)
+
+From CLI
+
+```bash
+./gradlew shadowJar
+```
+
+You can also just run the source code as you would normally, by running each main function!
+
+### multi-jar builds
+
+When we have been running our code so far, it has been with class files and with the help of an IDE.
+
+For the project, you will need to submit two JAR files along with your source code.
+
+The difference here is that these JAR files must contain all the dependencies to execute your code!
+
+What if you want to have some shared code between the client and server? How can this be done in a clean and professional manner?
+
+Luckily there are two great build tools in heavy use within the java ecosystem.
+
+**Gradle** and **Maven**.
+
+We have been using Maven so far for quickly configuring a new project, however it has plenty of additional functionality.
+
+For this challenge, we will setup a gradle project that has three sub-projects. 
 
 ```sh
-server/target/lib/server.jar
-client/target/lib/client.jar
+client/ # client src code
+server/ # server src code
+base/   # shared code (types/serialization)
 ```
 
-The Uber jar is a fat jar that packages dependencies as well.
+##### Gradle
 
+Gradle is a build and dependency manager. It is much less verbose in comparison to Maven.
 
-## Commands
+If you look at the sample structure:
 
 ```
-#identitychange
-#join
-#who
-#list
-#createroom
-#deleteroom
-#quit
+├── base
+│   ├── build.gradle # deps + build target for base
+│   └── src          # your shared code goes here
+├── client
+│   ├── build.gradle # deps + build target for client
+│   └── src          # your client specific code here
+├── gradle 
+│   └── wrapper      
+├── gradlew          # gradle build script for mac/unix
+├── gradlew.bat      # gradle build script for windows
+├── README.md 
+├── server
+│   ├── build.gradle # deps + build target for server
+│   └── src          # your server specific code here
+└── settings.gradle  # declares the project structure
 ```
 
-## Wire
+In `server/build.gradle` `client/build.gradle` you will see that they each have dependencies on
 
-### Types
-
-```json
-identity: [a-zA-Z0-9]{3,16}
-string: char[]
-i32: int
+```groovy
+implementation project(':base')
 ```
 
-### C2S
+Meaning, we want the "base" project to be available to our code in these separate projects.
 
-#### identitychange
-
-```json
-{
-    "type": "identitychange",
-    "identity": identity
-}
-```
-
-#### join
-
-```json
-{
-    "type":"join",
-    "roomid": string
-}
-```
+This also includes any transitive dependencies that base has, we will also include.
 
 
-#### who
+### JSON Parsing
 
-```json
-{
-    "type":"who",
-    "roomid": string
-}
-```
+There is no default implementation of a JSON serializer and deserializer in the JDK.
 
-#### list
+To add this functionality, we can include a library.
 
-```json
-{
-    "type":"list"
-}
-```
+The two most popular are
 
-#### createroom
-
-```json
-{
-    "type":"createroom",
-    "roomid": string
-}
-```
-
-#### delete
-
-```json
-{
-    "type":"delete",
-    "roomid": string
-}
-```
-
-#### quit
-
-```json
-{
-    "type":"quit"
-}
-```
-
-#### message
+[jackson](https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core)
+[gson](https://mvnrepository.com/artifact/com.google.code.gson/gson)
 
 
-```json
-{
-    "type":"message",
-    "content": string
-}
-```
-
-### S2C
+Similar to last weeks challenge, the role of these libraries is to serialize and desrialize code to and from byte buffers.
 
 
-#### newidentity
+You can see the annotations and tests that do so in base!
 
-```json
-{
-    "type":"newidentity",
-    "former": identity,
-    "identity": identity
-}
-````
+### What do you need to do?
 
-#### roomchange
+Play around with the annotations and other methods.
 
-```json
-{
-    "type":"roomchange",
-    "identity": identity,
-    "former": identity,
-    "roomid": string
-}
-```
-
-#### roomcontents
-
-```json
-{
-    "type":"roomcontents",
-    "roomid": string,
-    "identities": [identity],
-    "owner": identity
-}
-```
-
-#### roomlist
-
-```json
-{
-    "type":"roomlist",
-    "rooms": [{"roomid": string, "count": i32}]
-}
-```
-
-#### message
-
-```json
-{
-    "type":"message",
-    "identity": identity,
-    "content": string
-}
-```
-
+Decide what is right for your or even upgrade the current setup you have!
