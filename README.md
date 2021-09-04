@@ -3,7 +3,7 @@ Currently the client is able to send messages to the server. The messages are se
 
 
 # Next steps:
-- The client *cannot* cleanly read the received JSON object (it comes out in raw JSON format rather than a nice string). Will work on that soon. 
+- The client *cannot* cleanly read the received JSON object (it comes out in raw JSON format rather than a nice string). Will work on that soon (btw clients read messages from the GetMessageThread class).
 - Once the above is sorted we can start implementing actual commands (e.g identity change). 
 
 
