@@ -40,20 +40,59 @@ public class SendMessageThread extends Thread {
             Scanner keyboard = new Scanner(System.in);
             String text = keyboard.nextLine();
 
-            // Wrap this input into JSON
-            ClientPackets.Message message = new ClientPackets.Message(text);
-            try {
-                String x = objectMapper.writeValueAsString(message);
-                writer.println(x);
-                writer.flush();
+            // First parse the client input. Are they issuing a server command?
+            // Server command IDENTITYCHANGE
+            if (text.contains("#identitychange")) {
+                // Remove the command and then wrap the new identity into a JSON.
+                String identity = text.replaceAll("#identitychange", "");
+                identity = identity.stripLeading();
 
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
+                ClientPackets.IdentityChange identityChange = new ClientPackets.IdentityChange(identity);
+                try {
+                    String msg = objectMapper.writeValueAsString(identityChange);
+                    System.out.println(msg);
+                    writer.println(msg);
+                    writer.flush();
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
             }
 
+            // Server command JOIN
+            // TODO
+            else if (text.contains("#join")) {
+                String newRoom = text.replaceAll("#join", "");
+                newRoom = newRoom.stripLeading();
+
+                ClientPackets.Join joinRoom = new ClientPackets.Join(newRoom);
+                try {
+                    String msg = objectMapper.writeValueAsString(joinRoom);
+                    System.out.println(msg);
+                    writer.println(msg);
+                    writer.flush();
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+            // Else they aren't issuing a command. Assume it's a standard message.
+            else {
+                // Wrap this input into JSON
+                ClientPackets.Message message = new ClientPackets.Message(text);
+                try {
+                    String x = objectMapper.writeValueAsString(message);
+                    System.out.println(x);
+                    writer.println(x);
+                    writer.flush();
+
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
-
     }
+
 
 }

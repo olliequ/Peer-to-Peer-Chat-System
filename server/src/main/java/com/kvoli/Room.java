@@ -10,7 +10,7 @@ public class Room extends Thread {
     private String roomName;
 
     // Should be String but using int for now (I am storing client port numbers).
-    private ArrayList<Integer> roomContents = new ArrayList<>();
+    private ArrayList<String> roomContents = new ArrayList<>();
 
 
     public Room(int roomID, String roomName) {
@@ -19,20 +19,31 @@ public class Room extends Thread {
     }
 
 
-    protected void addUser(int clientID) {
+    protected void addUser(String clientID) {
         roomContents.add(clientID);
     }
 
-    protected void removeUser(int clientID) {
+    protected void removeUser(String clientID) {
+        //roomContents.remove(clientID);
         roomContents.remove(clientID);
     }
 
-    protected ArrayList<Integer> getRoomContents() {
+    protected void changeUserID(String oldID, String newID) {
+        int indexOldID = roomContents.indexOf(oldID);
+        roomContents.set(indexOldID, newID);
+    }
+
+
+    protected ArrayList<String> getRoomContents() {
         return roomContents;
     }
 
     protected String getRoomName() {
         return roomName;
+    }
+
+    protected int getRoomSize() {
+        return roomContents.size();
     }
 }
 

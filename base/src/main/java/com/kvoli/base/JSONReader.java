@@ -15,9 +15,9 @@ public class JSONReader {
             return content;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             // Using ncat instead of the client can trigger this as well.
-            System.out.println("Reading exception. The message received may not have been a JSON object.");
+            //System.out.println("Reading exception. The message received may not have been a JSON object.");
         }
         return content;
     }

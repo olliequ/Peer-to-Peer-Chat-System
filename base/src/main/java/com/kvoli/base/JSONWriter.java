@@ -13,6 +13,7 @@ public class JSONWriter {
      * @return JSON String message
      */
 
+    // used for the "message command"
     public String buildJSON(String clientMsg, String userID) {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
@@ -33,6 +34,26 @@ public class JSONWriter {
             System.out.println("Error when writing message");
         }
         return serverMessage;
+    }
 
+
+    // Used for the "identitychange" command.
+    public String buildJSONNewID(String formerID, String newID) {
+        String serverMessage = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try{
+            // Build a new JSON string out of these fields
+            ServerPackets.NewIdentity identityChange = new ServerPackets.NewIdentity(formerID, newID);
+            serverMessage = objectMapper.writeValueAsString(identityChange);
+            System.out.println("Testing: " + serverMessage);
+            return serverMessage;
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error when writing newID message");
+        }
+        return serverMessage;
     }
 }

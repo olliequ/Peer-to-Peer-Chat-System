@@ -7,6 +7,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 public class GetMessageThread extends Thread {
     private Client client;
@@ -32,8 +36,33 @@ public class GetMessageThread extends Thread {
         while (gettingMessages) {
             try {
                 String in = reader.readLine();
+
                 if (in != null) {
-                    System.out.println(in);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    JsonNode jsonNode = objectMapper.readTree(in);
+                    String type = jsonNode.get("type").asText();
+
+                    // Received MESSAGE from server
+                    if (type.equals("message")) {
+                        String content = jsonNode.get("content").asText();
+                        String identity = jsonNode.get("identity").asText();
+                        System.out.println(identity + ": " + content);
+                    }
+
+                    // Received NEWIDENTITY from server
+                    else if (type.equals("newidentity")) {
+                        String former = jsonNode.get("former").asText();
+                        String identity = jsonNode.get("identity").asText();
+                        if (former.equals(identity))  {
+                            System.out.println("Requested identity invalid or in use.");
+                        }
+                        else {
+                            System.out.println(former + " is now " + identity);
+                        }
+                    }
+
+                    // Received ROOMCHANGE from server
+                    // TODO: Handle ROOMCHANGE
                 }
 
             } catch (IOException e) {
