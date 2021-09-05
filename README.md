@@ -1,3 +1,12 @@
+# Notes
+Currently the client is able to send messages to the server. The messages are sent as a JSON string. The server can read these messages, append identifier information to the JSON (as required by the spec) and then re-broadcast it to everyone else in the room.
+
+
+# Next steps:
+- The client *cannot* cleanly read the received JSON object (it comes out in raw JSON format rather than a nice string). Will work on that soon (btw clients read messages from the GetMessageThread class).
+- Once the above is sorted we can start implementing actual commands (e.g identity change). 
+
+
 # Challenge 05
 
 This week we will take a detour to focus on project 1.
