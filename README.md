@@ -1,11 +1,23 @@
-# Notes
-Currently the client is able to send messages to the server. The messages are sent as a JSON string. The server can read these messages, append identifier information to the JSON (as required by the spec) and then re-broadcast it to everyone else in the room.
+# Current functionality
+- Client send messages as JSON.
+- Server responds with messages as JSON.
+- Client can make identitychange request (see SendMessageaThread in Base).
+- Server can act appropriately to identitychange request.
 
+## TODO: Client commands (see ClientPackets in base)
+-  join
+-  list
+-  who
+-  createroom
+-  delete
+-  quit              <- should be trivial
 
-# Next steps:
-- The client *cannot* cleanly read the received JSON object (it comes out in raw JSON format rather than a nice string). Will work on that soon (btw clients read messages from the GetMessageThread class).
-- Once the above is sorted we can start implementing actual commands (e.g identity change). 
+## TODO: Server commands (see ServerPackets in base)
+- roomchange
+- roomlist
 
+## TODO: Other
+- I don't know how to represent a JSON array in Java (see RoomContents class in ServerPackets).
 
 # Challenge 05
 
