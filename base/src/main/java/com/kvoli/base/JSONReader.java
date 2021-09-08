@@ -22,6 +22,4 @@ public class JSONReader {
         return content;
     }
 
-
-    // TODO: PROPERLY PARSE JSONS SENT FROM SERVER
 }

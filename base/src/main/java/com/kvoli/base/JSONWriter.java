@@ -2,6 +2,11 @@ package com.kvoli.base;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class JSONWriter {
@@ -46,7 +51,7 @@ public class JSONWriter {
             // Build a new JSON string out of these fields
             ServerPackets.NewIdentity identityChange = new ServerPackets.NewIdentity(formerID, newID);
             serverMessage = objectMapper.writeValueAsString(identityChange);
-            System.out.println("Testing: " + serverMessage);
+            //System.out.println("Testing: " + serverMessage);
             return serverMessage;
 
         }
@@ -67,7 +72,7 @@ public class JSONWriter {
             // Build a new JSON string out of these fields
             ServerPackets.RoomChange roomChange = new ServerPackets.RoomChange(identity, formerRoom, roomID);
             serverMessage = objectMapper.writeValueAsString(roomChange);
-            System.out.println("Testing: " + serverMessage);
+            //System.out.println("Testing: " + serverMessage);
             return serverMessage;
 
         }
@@ -77,4 +82,51 @@ public class JSONWriter {
         }
         return serverMessage;
     }
+
+
+    // Build json string for the current room
+    public String buildJsonRoomInfo(String roomid, int count){
+        String serverMessage = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try{
+            // Build a new JSON string out of these fields
+            ServerPackets.RoomInfo roomInfo = new ServerPackets.RoomInfo(roomid, count);
+            serverMessage = objectMapper.writeValueAsString(roomInfo);
+            return serverMessage;
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error when writing newID message");
+        }
+        return serverMessage;
+
+    }
+
+
+    public String buildJsonRoomList(List<String> rooms) {
+        String serverMessage = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        ArrayList<ArrayList<String>> test = new ArrayList<ArrayList<String>>();
+
+        try{
+            // Build a new JSON string out of these fields
+            ServerPackets.RoomList roomList = new ServerPackets.RoomList(rooms);
+            serverMessage = objectMapper.writeValueAsString(roomList);
+            //System.out.println("Testing: " + serverMessage);
+            return serverMessage;
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error when writing newID message");
+        }
+        return serverMessage;
+    }
+
+
+
+
 }

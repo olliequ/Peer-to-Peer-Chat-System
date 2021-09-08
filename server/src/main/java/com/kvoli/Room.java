@@ -6,9 +6,7 @@ import com.kvoli.base.Base;
 import java.util.ArrayList;
 
 public class Room extends Thread {
-    //private int roomID;
     private String roomID;
-    //private String roomName;
 
     // Should be String but using int for now (I am storing client port numbers).
     private ArrayList<String> roomContents = new ArrayList<>();

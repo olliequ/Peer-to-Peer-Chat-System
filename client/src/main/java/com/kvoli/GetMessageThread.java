@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.List;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +18,7 @@ public class GetMessageThread extends Thread {
     private Client client;
     private BufferedReader reader;
     private Socket socket;
+    private String clientID;
 
     public GetMessageThread(Socket socket, Client client) {
         this.client = client;
@@ -40,7 +43,12 @@ public class GetMessageThread extends Thread {
                 if (in != null) {
                     ObjectMapper objectMapper = new ObjectMapper();
                     JsonNode jsonNode = objectMapper.readTree(in);
-                    String type = jsonNode.get("type").asText();
+                    String type = "null";
+
+                    try{
+                        type = jsonNode.get("type").asText();
+                    } catch (Exception e) {
+                    }
 
                     // Received MESSAGE from server
                     if (type.equals("message")) {
@@ -62,18 +70,33 @@ public class GetMessageThread extends Thread {
                     }
 
                     // Received ROOMCHANGE from server
-                    // TODO: Handle ROOMCHANGE
                     else if (type.equals("roomchange")) {
                         String identity = jsonNode.get("identity").asText();
                         String former = jsonNode.get("former").asText();
                         String roomid = jsonNode.get("roomid").asText();
 
+
                         if (former.equals(roomid)) {
                             System.out.println("The requested room is invalid or non existent.");
+                        }
+                        else if (roomid.equals("")) {
+                            System.out.println(identity + " has left the server.");
                         }
                         else {
                             System.out.println(identity + " moved from " + former + " to " + roomid);
                         }
+                    }
+
+                    // Received ROOMLIST from server
+                    else if (type.equals("roomlist")) {
+                        //String rooms = jsonNode.get("rooms").get(0).asText();
+
+                        // Used for printing out each room in the list we received.
+                        // TODO: Currently used for debugging. Should be deleted before submission.
+                        for (JsonNode node : jsonNode.get("rooms")) {
+                            System.out.println(node.asText());
+                        }
+
                     }
                 }
 

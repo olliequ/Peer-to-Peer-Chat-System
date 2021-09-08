@@ -41,7 +41,8 @@ public class SendMessageThread extends Thread {
             String text = keyboard.nextLine();
 
             // First parse the client input. Are they issuing a server command?
-            // Server command IDENTITYCHANGE
+
+            // Client command IDENTITYCHANGE
             if (text.contains("#identitychange")) {
                 // Remove the command and then wrap the new identity into a JSON.
                 String identity = text.replaceAll("#identitychange", "");
@@ -50,7 +51,7 @@ public class SendMessageThread extends Thread {
                 ClientPackets.IdentityChange identityChange = new ClientPackets.IdentityChange(identity);
                 try {
                     String msg = objectMapper.writeValueAsString(identityChange);
-                    System.out.println(msg);
+                    //System.out.println(msg);
                     writer.println(msg);
                     writer.flush();
                 } catch (JsonProcessingException e) {
@@ -58,8 +59,7 @@ public class SendMessageThread extends Thread {
                 }
             }
 
-            // Server command JOIN
-            // TODO: JOIN
+            // Client command JOIN
             else if (text.contains("#join")) {
                 String newRoomMsg = text.replaceAll("#join", "");
                 newRoomMsg = newRoomMsg.stripLeading();
@@ -67,14 +67,46 @@ public class SendMessageThread extends Thread {
                 ClientPackets.Join joinRoom = new ClientPackets.Join(newRoomMsg);
                 try {
                     String msg = objectMapper.writeValueAsString(joinRoom);
-                    System.out.println(msg);
+                    //System.out.println(msg);
                     writer.println(msg);
                     writer.flush();
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                 }
-
             }
+
+            // Client command LIST
+            else if (text.contains("#list")) {
+                String listMsg = text.replaceAll("#list", "");
+                listMsg = listMsg.stripLeading();
+
+                ClientPackets.List listRoom = new ClientPackets.List();
+                try {
+                    String msg = objectMapper.writeValueAsString(listRoom);
+                    //System.out.println(msg);
+                    writer.println(msg);
+                    writer.flush();
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            // Client command QUIT
+            else if (text.contains("#quit")) {
+                String listMsg = text.replaceAll("#list", "");
+                listMsg = listMsg.stripLeading();
+
+                ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+
+                try {
+                    String msg = objectMapper.writeValueAsString(quitMsg);
+                    writer.println(msg);
+                    writer.flush();
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }
+
 
             // Else they aren't issuing a command. Assume it's a standard message.
             else {

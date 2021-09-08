@@ -8,12 +8,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 
 /** TODO LIST: CLIENT COMMANDS
- * join
- * list
  * who
  * createroom
  * delete
- * quit
  */
 
 
@@ -55,13 +52,20 @@ public class ClientPackets {
         }
     }
 
-    // TODO
+
     @JsonTypeName("list")
     public static class List {
-        // TODO
+        public String type = "list";
+        public List() {}
     }
 
-    // TODO
+
+    @JsonTypeName("quit")
+    public static class Quit {
+        public String type = "quit";
+    }
+
+
     @JsonTypeName("join")
     public static class Join {
         public String type = "join";

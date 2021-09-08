@@ -4,11 +4,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 /** TODO LIST: SERVER COMMANDS
- * roomchange
  * roomcontents
- * roomlist
  */
 
 public class ServerPackets {
@@ -53,7 +54,7 @@ public class ServerPackets {
         }
     }
 
-    // TODO
+
     @JsonTypeName("roomchange")
     public static class RoomChange {
         public String type = "roomchange";
@@ -72,12 +73,39 @@ public class ServerPackets {
     }
 
 
+    @JsonTypeName("roomlist")
+    public static class RoomList {
+        public String type = "roomlist";
+        public List<String> rooms;
+
+        public RoomList(List<String> rooms)  {
+            this.rooms = rooms;
+        }
+
+    }
+
+
+    @JsonTypeName("roominfo")
+    public static class RoomInfo {
+        public String type = "roomlist";
+        public String roomid;
+        public int count;
+
+        public RoomInfo() {}
+        public RoomInfo(String roomid, int count) {
+            this.roomid = roomid;
+            this.count = count;
+        }
+    }
+
+
+
     // TODO
     @JsonTypeName("roomcontents")
     public static class RoomContents {
-        public String roomID;
+        public String roomid;
         public String owner;
-        // IDENTITIES IS A JSON ARRAY BUT I DON'T KNOW HOW TO REPRESENT THIS IN JAVA....
+
     }
 
 

@@ -1,12 +1,9 @@
 package com.kvoli;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.kvoli.base.*;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.w3c.dom.ls.LSOutput;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -20,14 +17,11 @@ public class Server {
   public static final int PORT = 6379;
   private volatile List<ServerConnection> currentConnections = new ArrayList<>();
   private volatile List<Room> currentRooms = new ArrayList<>();
-  //private int roomID = 0;
   private int guestCount = 0;                   // Used to identify new users. E.g. "guest5 has joined the server".
 
 
   // Broadcast the connection of a new user.
   private synchronized void connect(ServerConnection conn) {
-    // Broadcast the connection of a new user. TEMPORARILY DISABLED
-    //broadcast(String.format("%d has joined the chat.\n", conn.socket.getPort()), null);
     currentConnections.add(conn);
   }
 
@@ -40,17 +34,13 @@ public class Server {
 
   // Display a welcome message to the new user along with list of current rooms.
   private void welcome(String clientIdentity, ServerConnection conn) {
-    //conn.sendMessage("Welcome to the server. The current rooms are: \n");
-    //String json = "{\"type\":\"welcome\",\"content\":\"james-bond007\"}";
     String welcomeClient = "Connected to localhost as " + clientIdentity;
 
     JSONWriter jsonBuild = new JSONWriter();
     String serverMessage = jsonBuild.buildJSON(welcomeClient, "Server");
-    //System.out.println(serverMessage);
     conn.sendMessage(serverMessage + ". \n");
 
     for (Room room: currentRooms) {
-      // String ln = "This is a test string";
       String ln = room.getRoomName() + " has " + room.getRoomSize() + " guests.";
       String roomInfo = jsonBuild.buildJSON(ln, "Server");
       System.out.println(roomInfo);
@@ -59,9 +49,22 @@ public class Server {
     }
   }
 
+  // Rooms are strings that are stored in an arraylist. To access a particular room we need it's index in the array.
+  private int getRoomIndex(String roomID) {
+    int index = 0;
+    for (Room r: currentRooms) {
+      if (r.getRoomName().equals(roomID)) {
+        return index;
+      }
+      index += 1;
+    }
+    // Else, room not found.
+    return 0;
+  }
 
+
+  // Old method. A bit redundant but still in use.
   // Broadcast a server message (CONNECT/DISCONNECT) to everyone in a room except the ignored person (usually yourself).
-  // A bit redundant and can be merged with 'broadcastRoom' method down below...
   private synchronized void broadcast(String message, ServerConnection ignored) {
     for (ServerConnection c : currentConnections) {
       // If not ignored, send message
@@ -73,7 +76,7 @@ public class Server {
 
 
   /**
-   * Method to broadcast to users within the same room as the messenger.
+   * New method to broadcast to users within the same room as the messenger.
    * @param message   User message
    * @param roomID    The roomID to broadcast the message to
    * @param ignored
@@ -106,12 +109,13 @@ public class Server {
 
 
 
-
+  // Method to create a room
   private void createRoom(String roomID) {
     currentRooms.add(new Room(roomID));
   }
 
 
+  // Method to verify user identity (used for the changeIdentity method below)
   private synchronized boolean verifyIdentity(ServerConnection conn, String newIdentity) {
     // Make sure the new identity is unique
     for (ServerConnection c : currentConnections) {
@@ -131,16 +135,16 @@ public class Server {
 
 
   private synchronized String changeIdentity(ServerConnection conn, String newIdentity, boolean isValid) {
+    // If the new identity is invalid then we tell the client that we can't change their identity.
     if (!isValid) {
-      // Send fail message to client
       JSONWriter jsonBuild = new JSONWriter();
       String serverMessage = jsonBuild.buildJSONNewID(conn.identity, conn.identity);
       conn.sendMessage(serverMessage + "\n");
       return serverMessage;
     }
 
+    // Otherwise, change the identity of the client
     else {
-      // Change identity of client.
       String oldID = conn.identity;
       conn.identity = newIdentity;
 
@@ -153,7 +157,7 @@ public class Server {
   }
 
 
-  // TODO
+  // Method to allow a client to join a room
   private synchronized void joinRoom(ServerConnection conn, String oldRoom, String newRoom) {
     // First check if the new 'room' is even valid
     boolean isValid = false;
@@ -167,7 +171,7 @@ public class Server {
       }
     }
 
-    // Remove client from old room. Broadcast.
+    // Logic to remove a client from their old room
     if (isValid) {
       // Jump to the 'old' room and remove client from it.
       for (Room r: currentRooms) {
@@ -178,7 +182,6 @@ public class Server {
           JSONWriter jsonBuild = new JSONWriter();
           String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, oldRoom, newRoom);
           broadcastRoom(serverMessage, oldRoom, conn, conn.identity, true);
-
           // Send message to everyone in the new room that the client has joined
           broadcastRoom(serverMessage, newRoom, conn, conn.identity, true);
         }
@@ -186,7 +189,6 @@ public class Server {
       // TODO: If client changing to MainHall, server to send RoomContents msg to client (for MainHall) and
       // TODO: ...RoomList message after the RoomChange message.
     }
-
 
     else {
       // Unsuccessful. Send a message to the client.
@@ -197,28 +199,49 @@ public class Server {
   }
 
 
-  private int getRoomIndex(String roomID) {
-    int index = 0;
+  // Method used for the RoomList protocol
+  private synchronized void getRoomList(ServerConnection conn) {
+    List<String> roomContents = new ArrayList<String>();
+
+    // Iterate over each room
+    ArrayList<ArrayList<String>> roomInformation = new ArrayList<>();
+
     for (Room r: currentRooms) {
-      if (r.getRoomName().equals(roomID)) {
-        return index;
-      }
-      index += 1;
+      JSONWriter jsonBuild = new JSONWriter();
+      String serverMessage = jsonBuild.buildJsonRoomInfo(r.getRoomName(), r.getRoomSize());
+      roomContents.add(serverMessage);
     }
-    // Else, room not found.
-    return 0;
+
+    // Wrap this information in a RoomList json
+    JSONWriter jsonBuild = new JSONWriter();
+    String roomList = jsonBuild.buildJsonRoomList(roomContents);
+    System.out.println(roomList);
+
+    // Send to client
+    conn.sendMessage(roomList + "\n");
+
+  }
+
+
+  // TODO: Method for the Quit protocol.
+  private synchronized void quit(ServerConnection conn, String roomID) {
+    // Send RoomChange message to all clients in the room
+    JSONWriter jsonBuild = new JSONWriter();
+    String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, roomID, "");
+    broadcastRoom(serverMessage, roomID, conn, conn.identity, true);
+
+    // Remove user from the current room (handled by the close() method).
+    conn.close();
+
   }
 
 
   // Listen for new connections and create the initial room
   protected void handle() {
-    // First create the main hall
+    // First create the main hall. For testing purposes I made a second room since we can't create rooms yet.
     createRoom("MainHall");
-    //roomID += 1;
-
-    // For testing purposes I created a second room
     createRoom("test");
-    //roomID += 1;
+
 
     // Now handle connections to the server
     ServerSocket serverSocket;
@@ -234,18 +257,14 @@ public class Server {
         System.out.println("Accepted connection from socket: " + socket.getPort());
 
 
-        // Testing purposes: show contents of the current room
-        //System.out.println(currentRooms.get(0).getRoomContents());
-
         // Perform operations with the socket (client)
         // Now that the socket is assigned to a room, their messages should only be restricted to that room.
-        // Note: by default, new users are added to the Main Hall (roomID = 0).
+        // Note: by default, new users are added to the Main Hall (roomID = "MainHall").
         guestCount += 1;
         String clientName = "guest" + guestCount;
         currentRooms.get(0).addUser(clientName);
 
         ServerConnection currentConnection = new ServerConnection(socket, clientName, "MainHall");
-        //welcome(currentConnection);
 
         // Start a connection which will have its own thread of execution. Then we don't care about it anymore.
         // The connection will be able to handle itself.
@@ -263,8 +282,8 @@ public class Server {
 
   /**
    * All current clients have a 'ServerConnection' which is used to listen to each client.
-   * At a low level, each client is identified by their port number.
-   * Each client belongs to a room (they are designated a roomID).
+   * Each client is identified by the String 'identity'
+   * Each client belongs to a room (they are designated a roomID by default).
    */
   private class ServerConnection extends Thread {
     private Socket socket;
@@ -288,12 +307,15 @@ public class Server {
     public void run() {
       // Manage the connection here
       connectionAlive = true;
-      //String identity = Integer.toString(socket.getPort());
       welcome(identity, this);
-      System.out.println(currentRooms.get(getRoomIndex(roomID)).getRoomName());
+
+      // TESTING
+      //roomIndex = getRoomIndex(roomID);
+      //getRoomList(this);
+
 
       String msg = identity + " moves to " + currentRooms.get(roomIndex).getRoomName();
-      broadcastRoom(msg, roomID, null, "Server", false);     // "this" -> ignore ourselves in the broadcast
+      broadcastRoom(msg, roomID, null, "Server", false);
 
       // While connection is alive we listen to their socket and broadcast their messages appropriately.
       while (connectionAlive) {
@@ -311,12 +333,12 @@ public class Server {
             System.out.println(type);
 
             // Here we have conditionals to interpret the message type and act accordingly.
-            // For MESSAGE
+
             if (type.equals("message")) {
               broadcastRoom(msg, roomID, this, identity, false);     // "this" -> ignore ourselves in the broadcast
             }
 
-            // For IDENTITYCHANGE
+
             else if (type.equals("identitychange")) {
               String oldIdentity = identity;
               String newIdentity = jsonNode.get("identity").asText();
@@ -329,8 +351,6 @@ public class Server {
             }
 
 
-            // For JOIN
-            // TODO: HANDLE JOIN ROOM LOGIC (SEE METHOD)
             else if (type.equals("join")) {
               String newRoom = jsonNode.get("roomid").asText();
               System.out.println("User to join " + newRoom);
@@ -339,6 +359,14 @@ public class Server {
             }
 
 
+            else if (type.equals("list")) {
+              getRoomList(this);
+            }
+
+
+            else if (type.equals("quit")) {
+              quit(this, roomID);
+            }
           } else {
             //close();
             connectionAlive = false;
@@ -350,6 +378,7 @@ public class Server {
       }
       close();                                        // Close connections of those that left
     }
+
 
     public void sendMessage(String msg) {
       writer.print(msg);
