@@ -13,7 +13,7 @@ public class JSONWriter {
      * @return JSON String message
      */
 
-    // used for the "message command"
+    // Used for the "Message" protocol
     public String buildJSON(String clientMsg, String userID) {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
@@ -37,7 +37,7 @@ public class JSONWriter {
     }
 
 
-    // Used for the "identitychange" command.
+    // Used for the "IdentityChange" protocol.
     public String buildJSONNewID(String formerID, String newID) {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
@@ -46,6 +46,27 @@ public class JSONWriter {
             // Build a new JSON string out of these fields
             ServerPackets.NewIdentity identityChange = new ServerPackets.NewIdentity(formerID, newID);
             serverMessage = objectMapper.writeValueAsString(identityChange);
+            System.out.println("Testing: " + serverMessage);
+            return serverMessage;
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error when writing newID message");
+        }
+        return serverMessage;
+    }
+
+
+    // Used for the "JoinRoom" protocol
+    public String buildJSONJoinRoom(String identity, String formerRoom, String roomID) {
+        String serverMessage = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try{
+            // Build a new JSON string out of these fields
+            ServerPackets.RoomChange roomChange = new ServerPackets.RoomChange(identity, formerRoom, roomID);
+            serverMessage = objectMapper.writeValueAsString(roomChange);
             System.out.println("Testing: " + serverMessage);
             return serverMessage;
 

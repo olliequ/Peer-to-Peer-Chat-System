@@ -5,8 +5,6 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import java.util.HashMap;
 import java.util.Map;
 
-// Common code between server and client modules go in this base module. Commands to move etc.
-
 // Bad practices / cheat codes
 public class Command {
   public String type;

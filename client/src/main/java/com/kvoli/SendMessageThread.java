@@ -59,12 +59,12 @@ public class SendMessageThread extends Thread {
             }
 
             // Server command JOIN
-            // TODO
+            // TODO: JOIN
             else if (text.contains("#join")) {
-                String newRoom = text.replaceAll("#join", "");
-                newRoom = newRoom.stripLeading();
+                String newRoomMsg = text.replaceAll("#join", "");
+                newRoomMsg = newRoomMsg.stripLeading();
 
-                ClientPackets.Join joinRoom = new ClientPackets.Join(newRoom);
+                ClientPackets.Join joinRoom = new ClientPackets.Join(newRoomMsg);
                 try {
                     String msg = objectMapper.writeValueAsString(joinRoom);
                     System.out.println(msg);

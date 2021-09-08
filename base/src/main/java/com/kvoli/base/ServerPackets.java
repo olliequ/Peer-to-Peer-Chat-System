@@ -56,6 +56,7 @@ public class ServerPackets {
     // TODO
     @JsonTypeName("roomchange")
     public static class RoomChange {
+        public String type = "roomchange";
         public String identity;
         public String former;
         public String roomid;

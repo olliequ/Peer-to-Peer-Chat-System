@@ -63,6 +63,18 @@ public class GetMessageThread extends Thread {
 
                     // Received ROOMCHANGE from server
                     // TODO: Handle ROOMCHANGE
+                    else if (type.equals("roomchange")) {
+                        String identity = jsonNode.get("identity").asText();
+                        String former = jsonNode.get("former").asText();
+                        String roomid = jsonNode.get("roomid").asText();
+
+                        if (former.equals(roomid)) {
+                            System.out.println("The requested room is invalid or non existent.");
+                        }
+                        else {
+                            System.out.println(identity + " moved from " + former + " to " + roomid);
+                        }
+                    }
                 }
 
             } catch (IOException e) {

@@ -15,6 +15,8 @@ public class Packets {
       @JsonSubTypes.Type(value = IdentityChange.class, name = "identitychange"),
       @JsonSubTypes.Type(value = Join.class, name = "join")
   })
+
+
   public static class ToServer {
   }
 
@@ -26,6 +28,15 @@ public class Packets {
   @JsonTypeName("join")
   public static class Join extends ToServer {
     public String roomid;
+  }
+
+  @JsonTypeName("message")
+  public static class Message extends ToServer {
+    public String content;
+
+    public Message(String content) {
+      this.content = content;
+    }
   }
 
 }
