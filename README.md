@@ -4,17 +4,16 @@
 - Server responds with messages as JSON.
 - Client can make identitychange request (see SendMessageThread in Base).
 - Server can act appropriately to identitychange request.
-- Client can join room. 
+- Client can #join room. Client can call #list. Client can #quit. 
 
 ## TODO: Client protocols (see ClientPackets in base)
--  list (goes hand in hand with server protocol RoomList)
 -  who
 -  createroom
 -  delete
--  quit              <- should be trivial
+-  quit              <- half done.
 
 ## TODO: Server protocols (see ServerPackets in base)
-- roomlist (also needs to be integrated with server side roomchange protocol)
+- roomcontents
 
 ## TODO: Other
 - I don't know how to represent a JSON array in Java (see RoomContents class in ServerPackets).
