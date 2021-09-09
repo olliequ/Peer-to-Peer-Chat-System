@@ -47,6 +47,8 @@ public class GetMessageThread extends Thread {
                         String identity = jsonNode.get("identity").asText();
                         System.out.println(identity + ": " + content);
                         clientID = identity;
+                        // System.out.println(clientID);
+                        this.client.setIdentity(clientID);
                     }
 
                     // Received NEWIDENTITY from server

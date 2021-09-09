@@ -19,6 +19,7 @@ public class SendMessageThread extends Thread {
     private Client client;
     private PrintWriter writer;
     private Socket socket;
+    public String ParentClientID = "";
 
     public SendMessageThread(Client client) {
         this.client = client;
@@ -30,13 +31,16 @@ public class SendMessageThread extends Thread {
     public void run() {
         boolean sendingMessages = true;
         while (sendingMessages) {
-            System.out.println("%s");
             ObjectMapper objectMapper = new ObjectMapper();
+            ParentClientID = this.client.getIdentity();
+            System.out.format("%s> %n", ParentClientID);
+            this.client.setIdentity("newID");
+            ParentClientID = this.client.Identity;
+            System.out.format("%s> %n", ParentClientID);
             Scanner keyboard = new Scanner(System.in);
             String text = keyboard.nextLine();
 
             // First parse the client input. Are they issuing a server command?
-
             // Client command IDENTITYCHANGE
             if (text.contains("#identitychange")) {
                 // Remove the command and then wrap the new identity into a JSON.
@@ -45,7 +49,7 @@ public class SendMessageThread extends Thread {
                 ClientPackets.IdentityChange identityChange = new ClientPackets.IdentityChange(identity);
                 try {
                     String msg = objectMapper.writeValueAsString(identityChange);
-                    System.out.format("IC jsons tring flushed to Server.: %s", msg);
+                    System.out.format("IC JSON string flushed to Server: %s", msg);
                     writer.println(msg);
                     writer.flush();             // Why not printing to all clients? writer is
                 } catch (JsonProcessingException e) {

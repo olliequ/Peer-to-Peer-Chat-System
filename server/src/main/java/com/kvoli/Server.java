@@ -88,7 +88,7 @@ public class Server {
 
     for (Room room: currentRooms) {
       String ln = "\t\t- "+room.getRoomName() + " has " + room.getRoomSize() + " guest(s) currently inside.";
-      String roomInfo = jsonBuild.buildJSON(ln, "Server");
+      String roomInfo = jsonBuild.buildJSON(ln, clientIdentity);
       System.out.println(roomInfo);
       conn.sendMessage(roomInfo);
       conn.sendMessage("\n");

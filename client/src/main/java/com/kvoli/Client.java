@@ -6,7 +6,7 @@ import java.net.Socket;
 public class Client {
   private final String serverAddress;
   private final int serverPort;
-  protected String Identity = "";
+  protected String Identity = "original";
   protected Socket socket;
   protected OutputStream ToServer;
   protected InputStream FromServer;
@@ -45,6 +45,14 @@ public class Client {
         e.printStackTrace();
     }
     return false;
+  }
+
+  public String getIdentity() {
+      return this.Identity;
+  }
+
+  public void setIdentity(String identity) {
+    this.Identity = identity;
   }
 
   private void close() {
