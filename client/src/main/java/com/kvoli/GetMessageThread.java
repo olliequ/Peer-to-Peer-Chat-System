@@ -20,17 +20,10 @@ public class GetMessageThread extends Thread {
     private Socket socket;
     private String clientID;
 
-    public GetMessageThread(Socket socket, Client client) {
+    public GetMessageThread(Client client) {
         this.client = client;
-        this.socket = socket;
-
-        try {
-            InputStream serverIn = socket.getInputStream();
-            reader = new BufferedReader(new InputStreamReader(serverIn));
-        } catch (IOException e) {
-            System.out.println("Exception occurred when getting message from server.");
-            e.printStackTrace();
-        }
+        this.socket = client.socket;
+        reader = new BufferedReader(new InputStreamReader(client.FromServer));
     }
 
     @Override
@@ -39,22 +32,21 @@ public class GetMessageThread extends Thread {
         while (gettingMessages) {
             try {
                 String in = reader.readLine();
-
                 if (in != null) {
                     ObjectMapper objectMapper = new ObjectMapper();
                     JsonNode jsonNode = objectMapper.readTree(in);
                     String type = "null";
 
-                    try{
+                    try {
                         type = jsonNode.get("type").asText();
-                    } catch (Exception e) {
-                    }
+                        } catch (Exception e) {}
 
                     // Received MESSAGE from server
                     if (type.equals("message")) {
                         String content = jsonNode.get("content").asText();
                         String identity = jsonNode.get("identity").asText();
                         System.out.println(identity + ": " + content);
+                        clientID = identity;
                     }
 
                     // Received NEWIDENTITY from server
@@ -62,7 +54,7 @@ public class GetMessageThread extends Thread {
                         String former = jsonNode.get("former").asText();
                         String identity = jsonNode.get("identity").asText();
                         if (former.equals(identity))  {
-                            System.out.println("Requested identity invalid or in use.");
+                            System.out.println("Requested identity invalid or in use."); // Why not showing on all?
                         }
                         else {
                             System.out.println(former + " is now " + identity);
@@ -74,8 +66,6 @@ public class GetMessageThread extends Thread {
                         String identity = jsonNode.get("identity").asText();
                         String former = jsonNode.get("former").asText();
                         String roomid = jsonNode.get("roomid").asText();
-
-
                         if (former.equals(roomid)) {
                             System.out.println("The requested room is invalid or non existent.");
                         }

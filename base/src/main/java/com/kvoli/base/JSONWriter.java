@@ -18,21 +18,16 @@ public class JSONWriter {
      * @return JSON String message
      */
 
-    // Used for the "Message" protocol
-    public String buildJSON(String clientMsg, String userID) {
+    // Used for the "Message" protocol -- to send simple on-screen messages to clients.
+    public String buildJSON (String clientMsg, String userID) {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
-
-        try{
-            // Create new field 'identity'.
-            String identity = userID;
-
+        try {
             // Build a new JSON string out of these fields
-            ServerPackets.Message message = new ServerPackets.Message(identity, clientMsg);
+            ServerPackets.Message message = new ServerPackets.Message(userID, clientMsg);
             serverMessage = objectMapper.writeValueAsString(message);
             // System.out.println("Testing: " + serverMessage);
             return serverMessage;
-
         }
         catch (Exception e) {
             e.printStackTrace();

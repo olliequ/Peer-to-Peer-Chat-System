@@ -20,23 +20,18 @@ public class SendMessageThread extends Thread {
     private PrintWriter writer;
     private Socket socket;
 
-    public SendMessageThread(Socket socket, Client client) {
-        try{
-            OutputStream clientOut = socket.getOutputStream();
-            writer = new PrintWriter(clientOut, true);
-        } catch (IOException e) {
-            System.out.println("Exception occurred during client output.");
-            e.printStackTrace();
-        }
+    public SendMessageThread(Client client) {
+        this.client = client;
+        this.socket = client.socket;
+        writer = new PrintWriter(client.ToServer, true);
     }
 
     @Override
     public void run() {
         boolean sendingMessages = true;
-
         while (sendingMessages) {
+            System.out.println("%s");
             ObjectMapper objectMapper = new ObjectMapper();
-
             Scanner keyboard = new Scanner(System.in);
             String text = keyboard.nextLine();
 
@@ -46,14 +41,13 @@ public class SendMessageThread extends Thread {
             if (text.contains("#identitychange")) {
                 // Remove the command and then wrap the new identity into a JSON.
                 String identity = text.replaceAll("#identitychange", "");
-                identity = identity.stripLeading();
-
+                identity = identity.stripLeading(); // Tom
                 ClientPackets.IdentityChange identityChange = new ClientPackets.IdentityChange(identity);
                 try {
                     String msg = objectMapper.writeValueAsString(identityChange);
-                    //System.out.println(msg);
+                    System.out.format("IC jsons tring flushed to Server.: %s", msg);
                     writer.println(msg);
-                    writer.flush();
+                    writer.flush();             // Why not printing to all clients? writer is
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                 }
@@ -66,8 +60,8 @@ public class SendMessageThread extends Thread {
 
                 ClientPackets.Join joinRoom = new ClientPackets.Join(newRoomMsg);
                 try {
-                    String msg = objectMapper.writeValueAsString(joinRoom);
-                    //System.out.println(msg);
+                    String msg = objectMapper.writeValueAsString(joinRoom); // Make a JSON object called `msg`.
+                    System.out.println(msg);
                     writer.println(msg);
                     writer.flush();
                 } catch (JsonProcessingException e) {
@@ -77,7 +71,7 @@ public class SendMessageThread extends Thread {
 
             // Client command LIST
             else if (text.contains("#list")) {
-                String listMsg = text.replaceAll("#list", "");
+                String listMsg = text.replaceAll("#list", ""); // These 2 lines not needed as listMsg isn't an argument?
                 listMsg = listMsg.stripLeading();
 
                 ClientPackets.List listRoom = new ClientPackets.List();
@@ -110,13 +104,13 @@ public class SendMessageThread extends Thread {
 
             // Else they aren't issuing a command. Assume it's a standard message.
             else {
-                // Wrap this input into JSON
+                // Wrap this input into JSON.
                 ClientPackets.Message message = new ClientPackets.Message(text);
                 try {
                     String x = objectMapper.writeValueAsString(message);
                     System.out.println(x);
-                    writer.println(x);
-                    writer.flush();
+                    writer.println(x);      // Send `x` to the writer, and flush to actually send over the network.
+                    writer.flush();         // Why doesn't flushing this to the server not also make appear on own screen -- as it's still going to serverInputStream!
 
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();

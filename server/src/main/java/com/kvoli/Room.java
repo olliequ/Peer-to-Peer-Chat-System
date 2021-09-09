@@ -5,32 +5,28 @@ import com.kvoli.base.Base;
 
 import java.util.ArrayList;
 
-public class Room extends Thread {
-    private String roomID;
+public class Room {
 
-    // Should be String but using int for now (I am storing client port numbers).
+    // Instance variables
+    private String roomID;
     private ArrayList<String> roomContents = new ArrayList<>();
 
-
-    public Room(String roomID) {
+    // Constructor
+    public Room (String roomID) {
         this.roomID = roomID;
     }
 
-
-    protected void addUser(String clientID) {
+    // Methods
+    protected void addUser (String clientID) {
         roomContents.add(clientID);
     }
 
-    protected void removeUser(String clientID) {
-        //roomContents.remove(clientID);
-        roomContents.remove(clientID);
-    }
+    protected void removeUser (String clientID) { roomContents.remove(clientID); }
 
-    protected void changeUserID(String oldID, String newID) {
+    protected void changeUserID (String oldID, String newID) {
         int indexOldID = roomContents.indexOf(oldID);
         roomContents.set(indexOldID, newID);
     }
-
 
     protected ArrayList<String> getRoomContents() {
         return roomContents;

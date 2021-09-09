@@ -13,6 +13,7 @@ import java.util.List;
  */
 
 public class ServerPackets {
+
     @JsonTypeInfo(
             use = JsonTypeInfo.Id.NAME,
             property = "type"
@@ -22,15 +23,12 @@ public class ServerPackets {
             @JsonSubTypes.Type(value = Packets.Join.class, name = "join")
     })
 
-
     @JsonTypeName("message")
-    public static class Message{
+    public static class Message {
         public String identity;
         public String content;
 
-        public Message()
-        {
-        }
+        public Message() {}
 
         public Message(String identity, String content) {
             this.identity = identity;
@@ -44,9 +42,7 @@ public class ServerPackets {
         public String former;
         public String identity;
 
-        public NewIdentity()
-        {
-        }
+        public NewIdentity() {}
 
         public NewIdentity(String former, String identity) {
             this.former = former;
@@ -72,7 +68,6 @@ public class ServerPackets {
         }
     }
 
-
     @JsonTypeName("roomlist")
     public static class RoomList {
         public String type = "roomlist";
@@ -83,7 +78,6 @@ public class ServerPackets {
         }
 
     }
-
 
     @JsonTypeName("roominfo")
     public static class RoomInfo {
@@ -98,8 +92,6 @@ public class ServerPackets {
         }
     }
 
-
-
     // TODO
     @JsonTypeName("roomcontents")
     public static class RoomContents {
@@ -107,7 +99,4 @@ public class ServerPackets {
         public String owner;
 
     }
-
-
-
 }

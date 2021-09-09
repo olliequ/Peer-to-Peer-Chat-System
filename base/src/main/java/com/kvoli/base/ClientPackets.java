@@ -13,8 +13,6 @@ import java.util.ArrayList;
  * delete
  */
 
-
-
 public class ClientPackets {
     @JsonTypeInfo(
             use = JsonTypeInfo.Id.NAME,
@@ -25,40 +23,33 @@ public class ClientPackets {
             @JsonSubTypes.Type(value = Packets.Join.class, name = "join")
     })
 
-
     @JsonTypeName("message")
-    public static class Message{
+    public static class Message {
         public String content;
 
-        public Message()
-        {}
-
+        public Message() {}
         public Message(String content) {
             this.content = content;
         }
     }
 
     @JsonTypeName("identitychange")
-    public static class IdentityChange{
+    public static class IdentityChange {
         // Jackson wouldn't put the above JsonTypeName into the actual JSON so I had to do it manually.
         public String type = "identitychange";
         public String identity;
 
-        public IdentityChange()
-        {}
-
+        public IdentityChange() {}
         public IdentityChange(String identity) {
             this.identity = identity;
         }
     }
-
 
     @JsonTypeName("list")
     public static class List {
         public String type = "list";
         public List() {}
     }
-
 
     @JsonTypeName("quit")
     public static class Quit {
