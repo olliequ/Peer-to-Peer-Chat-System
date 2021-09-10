@@ -33,11 +33,12 @@ public class SendMessageThread extends Thread {
         while (sendingMessages) {
             ObjectMapper objectMapper = new ObjectMapper();
             ParentClientID = this.client.getIdentity();
-            System.out.format("%s> %n", ParentClientID);
+            // System.out.format("%s> %n", ParentClientID);
             this.client.setIdentity("newID");
             ParentClientID = this.client.Identity;
-            System.out.format("%s> %n", ParentClientID);
+            // System.out.format("%s> %n", ParentClientID);
             Scanner keyboard = new Scanner(System.in);
+            System.out.format("%s> ", this.client.Identity);
             String text = keyboard.nextLine();
 
             // First parse the client input. Are they issuing a server command?
@@ -105,14 +106,13 @@ public class SendMessageThread extends Thread {
                 }
             }
 
-
             // Else they aren't issuing a command. Assume it's a standard message.
             else {
                 // Wrap this input into JSON.
                 ClientPackets.Message message = new ClientPackets.Message(text);
                 try {
                     String x = objectMapper.writeValueAsString(message);
-                    System.out.println(x);
+                    // System.out.println(x);
                     writer.println(x);      // Send `x` to the writer, and flush to actually send over the network.
                     writer.flush();         // Why doesn't flushing this to the server not also make appear on own screen -- as it's still going to serverInputStream!
 

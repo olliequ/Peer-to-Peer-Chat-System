@@ -7,6 +7,7 @@ public class Client {
   private final String serverAddress;
   private final int serverPort;
   protected String Identity = "original";
+  protected String CurrentRoom = "Wrong room";
   protected Socket socket;
   protected OutputStream ToServer;
   protected InputStream FromServer;
@@ -53,6 +54,14 @@ public class Client {
 
   public void setIdentity(String identity) {
     this.Identity = identity;
+  }
+
+  public String getCurrentRoom() {
+    return this.CurrentRoom;
+  }
+
+  public void setCurrentRoom(String CurrentRoom) {
+    this.CurrentRoom = CurrentRoom;
   }
 
   private void close() {

@@ -18,7 +18,6 @@ public class GetMessageThread extends Thread {
     private Client client;
     private BufferedReader reader;
     private Socket socket;
-    private String clientID;
 
     public GetMessageThread(Client client) {
         this.client = client;
@@ -44,22 +43,33 @@ public class GetMessageThread extends Thread {
                     // Received MESSAGE from server
                     if (type.equals("message")) {
                         String content = jsonNode.get("content").asText();
-                        String identity = jsonNode.get("identity").asText();
-                        System.out.println(identity + ": " + content);
-                        clientID = identity;
-                        // System.out.println(clientID);
-                        this.client.setIdentity(clientID);
+                        String IncomingIdentity = jsonNode.get("identity").asText();
+                        String IsThisOriginallyAServerMessage = jsonNode.get("FromServerOrNot").asText();
+                        if (IsThisOriginallyAServerMessage.equals("Yes")) {
+                            this.client.setIdentity(IncomingIdentity);
+                            System.out.println(content);
+                        }
+                        else if (IsThisOriginallyAServerMessage.equals("YesButIgnore")) {
+                            System.out.println(content);
+                        }
+                        else {
+                            System.out.println(IncomingIdentity + ": " + content);
+                        }
                     }
 
                     // Received NEWIDENTITY from server
                     else if (type.equals("newidentity")) {
                         String former = jsonNode.get("former").asText();
-                        String identity = jsonNode.get("identity").asText();
-                        if (former.equals(identity))  {
-                            System.out.println("Requested identity invalid or in use."); // Why not showing on all?
+                        String newIdentity = jsonNode.get("identity").asText();
+                        if (former.equals(newIdentity))  {
+                            System.out.println("Requested identity invalid or already in use!"); // Why not showing on all?
+                        }
+                        else if (former.equals(this.client.Identity)) {
+                            this.client.setIdentity(newIdentity);
+                            System.out.format("You have successfully changed identities from %s to %s :-)%n", former, newIdentity);
                         }
                         else {
-                            System.out.println(former + " is now " + identity);
+                            System.out.println(former + " has changed names to " + newIdentity + "!");
                         }
                     }
 
