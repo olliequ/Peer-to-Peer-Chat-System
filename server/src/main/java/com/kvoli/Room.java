@@ -9,12 +9,21 @@ public class Room {
 
     // Instance variables
     private String roomID;
+    private String roomOwner = "null";
     private ArrayList<String> roomContents = new ArrayList<>();
 
-    // Constructor
+    // Constructor 1: Default
     public Room (String roomID) {
         this.roomID = roomID;
     }
+
+    // Constructor 2: For user room creation
+    public Room (String roomID, String roomOwner) {
+        this.roomID = roomID;
+        this.roomOwner = roomOwner;
+    }
+
+
 
     // Methods
     protected void addUser (String clientID) {
@@ -39,5 +48,14 @@ public class Room {
     protected int getRoomSize() {
         return roomContents.size();
     }
+
+    protected void setRoomOwner(String roomID) {
+        this.roomOwner = roomID;
+    }
+
+    protected String getRoomOwner() {
+        return this.roomOwner;
+    }
+
 }
 

@@ -51,6 +51,28 @@ public class ClientPackets {
         public List() {}
     }
 
+    @JsonTypeName("createroom")
+    public static class CreateRoom {
+        public String type = "createroom";
+        public String roomid = "";
+
+        public CreateRoom() {}
+        public CreateRoom(String roomid) {
+            this.roomid = roomid;
+        }
+    }
+
+    @JsonTypeName("delete")
+    public static class Delete {
+        public String type = "delete";
+        public String roomid = "jokes";
+
+        public Delete() {}
+        public Delete(String roomid) {
+            this.roomid = roomid;
+        }
+    }
+
     @JsonTypeName("quit")
     public static class Quit {
         public String type = "quit";

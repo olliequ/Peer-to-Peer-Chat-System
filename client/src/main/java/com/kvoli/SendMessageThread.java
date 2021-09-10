@@ -12,7 +12,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
-import java.io.Console;
+
 
 public class SendMessageThread extends Thread {
     private Client client;
@@ -30,17 +30,22 @@ public class SendMessageThread extends Thread {
 
     @Override
     public void run() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        Scanner keyboard = new Scanner(System.in);
-        ParentClientID = this.client.getIdentity();
         boolean sendingMessages = true;
-        while (sendingMessages) {
-            String text = "";
-            text = keyboard.nextLine();
 
-            // Console console = System.console();
-            // String text = "";
-            // text = console.readLine("Type something: ");
+
+        while (sendingMessages) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            ParentClientID = this.client.getIdentity();
+            String text = "";
+
+                Scanner keyboard = new Scanner(System.in);
+                text = keyboard.nextLine();
+
+//            if (this.client.getWelcomeStatus() == true) {
+//                System.out.print(ParentClientID + ": ");
+//                Scanner keyboard = new Scanner(System.in);
+//                text = keyboard.nextLine();
+//            }
 
             // First parse the client input. Are they issuing a server command?
             // Client command IDENTITYCHANGE
@@ -48,10 +53,11 @@ public class SendMessageThread extends Thread {
                 // Remove the command and then wrap the new identity into a JSON.
                 String identity = text.replaceAll("#identitychange", "");
                 identity = identity.stripLeading(); // Tom
+                this.client.setRequestedIdentity(identity);
                 ClientPackets.IdentityChange identityChange = new ClientPackets.IdentityChange(identity);
                 try {
                     String msg = objectMapper.writeValueAsString(identityChange);
-                    // System.out.format("IC JSON string flushed to Server: %s%n", msg);
+                    System.out.format("IC JSON string flushed to Server: %s", msg);
                     writer.println(msg);
                     writer.flush();             // Why not printing to all clients? writer is
                 } catch (JsonProcessingException e) {
@@ -79,11 +85,10 @@ public class SendMessageThread extends Thread {
             else if (text.contains("#list")) {
                 String listMsg = text.replaceAll("#list", ""); // These 2 lines not needed as listMsg isn't an argument?
                 listMsg = listMsg.stripLeading();
-
                 ClientPackets.List listRoom = new ClientPackets.List();
+
                 try {
                     String msg = objectMapper.writeValueAsString(listRoom);
-                    //System.out.println(msg);
                     writer.println(msg);
                     writer.flush();
                 } catch (JsonProcessingException e) {
@@ -91,10 +96,27 @@ public class SendMessageThread extends Thread {
                 }
             }
 
+            else if (text.contains("#createroom")) {
+                String createRoomMsg = text.replaceAll("#createroom", ""); // These 2 lines not needed as listMsg isn't an argument?
+                createRoomMsg = createRoomMsg.stripLeading();
+
+                ClientPackets.CreateRoom createRoom = new ClientPackets.CreateRoom(createRoomMsg);
+                try {
+                    String msg = objectMapper.writeValueAsString(createRoom);
+                    //System.out.println(msg);
+                    writer.println(msg);
+                    writer.flush();
+                    this.client.setRoomToCreate(createRoomMsg);
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
             // Client command QUIT
             else if (text.contains("#quit")) {
-                String listMsg = text.replaceAll("#list", "");
-                listMsg = listMsg.stripLeading();
+                String quit = text.replaceAll("#quit", "");
+                quit = quit.stripLeading();
 
                 ClientPackets.Quit quitMsg = new ClientPackets.Quit();
 
@@ -107,16 +129,33 @@ public class SendMessageThread extends Thread {
                 }
             }
 
+
+            else if (text.contains("#delete")) {
+                String delete = text.replaceAll("#delete", "");
+                delete = delete.stripLeading();
+                ClientPackets.Delete deleteMsg = new ClientPackets.Delete(delete);
+
+                try {
+                    String msg = objectMapper.writeValueAsString(deleteMsg);
+                    writer.println(msg);
+                    writer.flush();
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
             // Else they aren't issuing a command. Assume it's a standard message.
             else {
-                // Wrap this input into JSON.
                 if (!text.equals("")) {
+                    // Wrap this input into JSON.
                     ClientPackets.Message message = new ClientPackets.Message(text);
                     try {
                         String x = objectMapper.writeValueAsString(message);
-                        // System.out.println(x);
+                        //System.out.println(x);
                         writer.println(x);      // Send `x` to the writer, and flush to actually send over the network.
-                        writer.flush();
+                        writer.flush();         // Why doesn't flushing this to the server not also make appear on own screen -- as it's still going to serverInputStream!
+
                     } catch (JsonProcessingException e) {
                         e.printStackTrace();
                     }
@@ -126,5 +165,9 @@ public class SendMessageThread extends Thread {
                 }
             }
         }
+
+
     }
+
+
 }

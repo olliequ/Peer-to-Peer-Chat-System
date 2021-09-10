@@ -11,9 +11,10 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class Server {
   private boolean acceptConnections = false;
-  public static final int PORT = 6379;
+  public static final int PORT = 4444;        // changed from 6379 to 4444
   private volatile List<ServerConnection> currentConnections = new ArrayList<>();
   private volatile List<Room> currentRooms = new ArrayList<>();
   private int guestCount = 0;                   // Used to identify new users. E.g. "guest5 has joined the server".
@@ -23,24 +24,23 @@ public class Server {
   public static final String ANSI_GREEN = "\u001B[32m";
   public static final String ANSI_RESET = "\u001B[0m";
 
+
   // Listen for new connections and create the initial room.
   protected void handle() {
-    // First create the main hall. For testing purposes I made a second room since we can't create rooms yet.
-    createRoom("MainHall");
-    createRoom("test");
+    currentRooms.add(new Room("MainHall"));
 
     // Now handle connections to the server
     ServerSocket serverSocket;
     try {
       // We want to bind serverSocket to a port. That port should accept connections within an infinite loop.
       serverSocket = new ServerSocket(PORT);
-      System.out.printf("Currently listening on port number %d%n", PORT);
+      System.out.printf("Currently listening on port number %d \n", PORT);
       acceptConnections = true;           // Listen for connections -- whilst server still up and alive.
 
       while (acceptConnections) {
         // Accepted a connection. Move them to the main hall room.
         Socket socket = serverSocket.accept(); // Generate new socket based off the encompassing ServerSocket -- accept it.
-        System.out.println(ANSI_GREEN+"\nAccepted connection from client with port number: " + socket.getPort() + "."+ANSI_RESET); // Port # of client.
+        System.out.println("Accepted connection from client with port number: " + socket.getPort()); // Port # of client.
 
         // Perform operations with the socket (client)
         // Now that the socket is assigned to a room, their messages should only be restricted to that room.
@@ -62,10 +62,6 @@ public class Server {
     }
   }
 
-  // Method to create a room
-  private void createRoom(String roomID) {
-    currentRooms.add(new Room(roomID));
-  }
 
   // Broadcast the connection of a new user.
   private synchronized void connect(ServerConnection conn) {
@@ -80,18 +76,21 @@ public class Server {
 
   // Display a welcome message to the new user along with list of current rooms.
   private void welcome(String clientIdentity, ServerConnection conn) {
-    String welcomeClient = "---> Welcome! You are connected as: "+ANSI_CYAN+clientIdentity+ANSI_RESET+"\n---> Here's a rundown on the currently active rooms:";
-    String FromServerOrNot = "Yes";
+    String welcomeClient = "---> Welcome! You are connected as: "+ANSI_CYAN+clientIdentity+ANSI_RESET+"\n\t\t---> Here's a rundown on the currently active rooms:";
+    String FromServerOrNot = "Yes"; // Make this a boolean instead?
     JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
-    String serverMessage = jsonBuild.buildJSON(welcomeClient, clientIdentity); // Calls method that builds the JSON String.
+
+    // NOTE: CHANGED 2ND PARAM ("Server" -> clientIdentity)
+    String serverMessage = jsonBuild.buildJSON(welcomeClient, "Server"); // Calls method that builds the JSON String.
+
     System.out.format("%n"+ANSI_BLUE+"Sending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+    System.out.format("JSON String: %s%n", serverMessage);
     System.out.format("Welcome JSON String: %s%n", serverMessage);
-    conn.sendMessage(serverMessage);
-    conn.sendMessage("\n");
+    conn.sendMessage(serverMessage + ". \n");
 
     for (Room room: currentRooms) {
-      String RoomInfo = "\t\t- "+room.getRoomName() + " has " + room.getRoomSize() + " guest(s) currently inside.";
-      String roomInfoJSON = jsonBuild.buildJSON(RoomInfo, "Server");
+      String ln = "\t\t---> "+room.getRoomName() + " has " + room.getRoomSize() + " guest(s) currently inside.";
+      String roomInfoJSON = jsonBuild.buildJSON(ln, "Server");
       System.out.format("Printing Room JSON String: %s%n", roomInfoJSON);
       conn.sendMessage(roomInfoJSON);
       conn.sendMessage("\n");
@@ -105,6 +104,23 @@ public class Server {
     conn.sendMessage("\n");
   }
 
+  // OLD WELCOME
+//  private void welcome(String clientIdentity, ServerConnection conn) {
+//    String welcomeClient = "---> Welcome! You are connected as: "+ANSI_CYAN+clientIdentity+ANSI_RESET+"\n\t\t---> Here's a rundown on the currently active rooms:";
+//    JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
+//    String serverMessage = jsonBuild.buildJSON(welcomeClient, "Server"); // Calls method that builds the JSON String.
+//    System.out.format("JSON String: %s%n", serverMessage);
+//    conn.sendMessage(serverMessage + ". \n");
+//
+//    for (Room room: currentRooms) {
+//      String ln = "\t\t- "+room.getRoomName() + " has " + room.getRoomSize() + " guest(s) currently inside.";
+//      String roomInfo = jsonBuild.buildJSON(ln, "Server");
+//      System.out.println(roomInfo);
+//      conn.sendMessage(roomInfo);
+//      conn.sendMessage("\n");
+//    }
+//  }
+
   // Rooms are strings that are stored in an arraylist. To access a particular room we need its index in the array.
   private int getRoomIndex(String roomID) {
     int index = 0;
@@ -115,7 +131,7 @@ public class Server {
       index += 1;
     }
     // Else, room not found.
-    return 0;
+    return -1;
   }
 
   // Old method. A bit redundant but still in use.
@@ -125,7 +141,6 @@ public class Server {
       // If not ignored, send message
       if (ignored == null || !ignored.equals(c)) {
         c.sendMessage(message);
-        c.sendMessage("\n");
       }
     }
   }
@@ -138,7 +153,7 @@ public class Server {
    */
   private synchronized void broadcastRoom(String message, String roomID, ServerConnection ignored, String ID, boolean isJson) {
     for (ServerConnection c : currentConnections) {
-      if (c.roomID.equals(roomID) && !isJson) {
+      if (c.roomID.equals(roomID) && isJson == false) {
         if (ignored == null || !ignored.equals(c)) {
           /**
            Null if this method is called from the server, not a specific connection thread. Not gonna be null if called from a ServerConnection thread.
@@ -151,19 +166,17 @@ public class Server {
           System.out.println("BroadcastRoom JSON: " + serverMessage);
 
           // Now broadcast the JSON string to everyone in the room.
-          c.sendMessage(serverMessage);
-          c.sendMessage("\n");
+          c.sendMessage(serverMessage + "\n");
         }
       }
 
       // If we're already passing in a JSON then we don't need to build a JSON message. Just broadcast it.
-      else if (c.roomID.equals(roomID) && isJson) {
+      else if (c.roomID.equals(roomID) && isJson == true) {
         if (ignored == null || !ignored.equals(c)) {
           // Broadcast the JSON string to everyone in the room.
           System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
           System.out.println("BroadcastRoom JSON: " + message);
-          c.sendMessage(message);
-          c.sendMessage("\n");
+          c.sendMessage(message + "\n");
         }
       }
     }
@@ -180,7 +193,7 @@ public class Server {
     }
     // Ensure new identity is alphanumeric and between 3 - 16 characters.
     if (!newIdentity.matches("[A-Za-z0-9]+") || (newIdentity.length() < 3) || ((newIdentity).length()) > 16) {
-      // Send fail message to client
+      // Print server-side fail message
       System.out.println("Failed to change identity. Bad format.");
       return false;
     }
@@ -193,7 +206,6 @@ public class Server {
       JSONWriter jsonBuild = new JSONWriter();
       String serverMessage = jsonBuild.buildJSONNewID(conn.identity, conn.identity);
       conn.sendMessage(serverMessage + "\n");
-      conn.sendMessage("\n");
       return serverMessage;
     }
 
@@ -206,7 +218,6 @@ public class Server {
       currentRooms.get(getRoomIndex(conn.roomID)).changeUserID(oldID, newIdentity);
       JSONWriter jsonBuild = new JSONWriter();
       String serverMessage = jsonBuild.buildJSONNewID(oldID, conn.identity);
-      // System.out.format("CI JSON String: %s%n", serverMessage);
       return serverMessage;
     }
   }
@@ -238,12 +249,15 @@ public class Server {
           String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, oldRoom, newRoom);
           broadcastRoom(serverMessage, oldRoom, conn, conn.identity, true);
           // Send message to everyone in the new room that the client has joined
-          broadcastRoom(serverMessage, newRoom, conn, conn.identity, true);
+          broadcastRoom(serverMessage, newRoom, null, conn.identity, true);     // NOT IGNORING SELF. CHECK SPEC IF THIS IS FINE
         }
       }
       // TODO: If client changing to MainHall, server to send RoomContents msg to client (for MainHall) and
       // TODO: ...RoomList message after the RoomChange message.
     }
+
+    // TODO: NEW conditional: if isValid AND old room = "" then this is a new user that must be moved to the MainHall!
+
     else {
       // Unsuccessful. Send a message to the client.
       JSONWriter jsonBuild = new JSONWriter();
@@ -253,27 +267,116 @@ public class Server {
   }
 
   // Method used for the RoomList protocol
-  private synchronized void getRoomList(ServerConnection conn) {
+  // Third param is optional!
+  private synchronized void getRoomList(ServerConnection conn, boolean createModifiedList, String newRoomID) {
     List<String> roomContents = new ArrayList<String>();
-
-    // Iterate over each room
     ArrayList<ArrayList<String>> roomInformation = new ArrayList<>();
 
-    for (Room r: currentRooms) {
+    if (!createModifiedList) {
+      // Iterate over each room.
+      for (Room r: currentRooms) {
+        JSONWriter jsonBuild = new JSONWriter();
+        String serverMessage = jsonBuild.buildJsonRoomInfo(r.getRoomName(), r.getRoomSize());
+        roomContents.add(serverMessage);
+      }
+
+      // Wrap this information in a RoomList json
       JSONWriter jsonBuild = new JSONWriter();
-      String serverMessage = jsonBuild.buildJsonRoomInfo(r.getRoomName(), r.getRoomSize());
-      roomContents.add(serverMessage);
+      String roomList = jsonBuild.buildJsonRoomList(roomContents);
+      System.out.println(roomList);
+
+      // Send to client
+      conn.sendMessage(roomList + "\n");
+    }
+    else {
+      for (Room r: currentRooms) {
+        if (!r.getRoomName().equals(newRoomID)) {
+          JSONWriter jsonBuild = new JSONWriter();
+          String serverMessage = jsonBuild.buildJsonRoomInfo(r.getRoomName(), r.getRoomSize());
+          roomContents.add(serverMessage);
+        }
+      }
+      // Wrap this information in a RoomList json
+      JSONWriter jsonBuild = new JSONWriter();
+      String roomList = jsonBuild.buildJsonRoomList(roomContents);
+      System.out.println(roomList);
+
+      // Send to client
+      conn.sendMessage(roomList + "\n");
+      //getRoomList(conn);
+      System.out.println("Failed to create new room.");
     }
 
-    // Wrap this information in a RoomList json
-    JSONWriter jsonBuild = new JSONWriter();
-    String roomList = jsonBuild.buildJsonRoomList(roomContents);
-    System.out.println(roomList);
-
-    // Send to client
-    conn.sendMessage(roomList + "\n");
 
   }
+
+
+  private synchronized void createNewRoom(ServerConnection conn, String newRoomID) {
+    // Verify the new room id
+    // Ensure new identity is alphanumeric and between 3 - 16 characters.
+
+    boolean alreadyExists = false;
+
+    // Check if the room already exists. Update the flag if it does.
+    for (Room r: currentRooms) {
+      if (r.getRoomName().equals(newRoomID)) {
+        alreadyExists = true;
+      }
+    }
+
+    // Check if the room exists or if it has an invalid name.
+    if (alreadyExists ||(!newRoomID.matches("[A-Za-z0-9]+") || (newRoomID.length() < 3) || ((newRoomID).length()) > 32)) {
+      // Send a modified RoomList to the client so that they know that room creation was unsuccessful.
+      getRoomList(conn, true, newRoomID);
+
+      /** What is a modified RoomList and why?
+       * Generally a normal RoomList returns the list of ALL current rooms.
+       * However: if a room already exists, we need to modify the RoomList that is sent to the client.
+       * As per what Austen has agreed with on the discussion board, if the room already exists then we need to remove
+       *    that room from the RoomList before it is sent back to the client that was creating the room.
+       * The calling client will then iterate through the modified RoomList it receives. If the room they wanted to
+       * create is NOT present in this modified RoomList then they'll know that room creation was unsuccessful.
+       */
+    }
+
+    // Otherwise, handle room creation.
+    else {
+      currentRooms.add(new Room(newRoomID, conn.identity));
+      // Send roomList to client to tell them that room creation was successful.
+      getRoomList(conn, false, null);
+    }
+  }
+
+
+  private synchronized void deleteRoom(ServerConnection conn, String roomid) {
+    // Get index of the room to delete.
+    // If the user sent a bogus roomid then the getRoomIndex method will return -1
+    int index = getRoomIndex(roomid);
+    System.out.println(roomid + " " +  index);
+
+    if (index != -1) {
+      // If the room owner is the same as the client identity then delete the room.
+      if (currentRooms.get(index).getRoomOwner().equals(conn.identity)) {
+
+        // Move everyone in the current room to the main hall.
+        System.out.println("SERVER: Moving room occupants to MainHall");
+        for (ServerConnection c : currentConnections) {
+          if (c.roomID.equals(roomid)) {
+            joinRoom(c, roomid, "MainHall");
+          }
+        }
+
+        // Delete the room
+        currentRooms.remove(index);
+
+        // Send roomlist only to the client. If room was deleted then room should not appear in the list.
+        getRoomList(conn, false, null);
+
+      }
+    }
+
+  }
+
 
   // TODO: Method for the Quit protocol.
   private synchronized void quit(ServerConnection conn, String roomID) {
@@ -285,6 +388,9 @@ public class Server {
     // Remove user from the current room (handled by the close() method).
     conn.close();
   }
+
+
+
 
   /**
    * All current clients have a 'ServerConnection' which is used to listen to each client.
@@ -314,9 +420,17 @@ public class Server {
     public void run() {
       // Manage the connection here
       connectionAlive = true;
-      String msg = ANSI_RED+"---> "+identity+", has entered "+currentRooms.get(roomIndex).getRoomName()+". Be nice!"+ANSI_RESET; // Tells new client where it is. The line below will inform the other clients.
-      broadcastRoom(msg, roomID, this, "Server", false); // Broadcasts initial entrance message to all other clients.
+      //String msg = ANSI_RED+"\tAnnouncement: "+identity+", has entered "+currentRooms.get(roomIndex).getRoomName()+". Be nice!"+ANSI_RESET; // Tells new client where it is. The line below will inform the other clients.
+      String msg = ANSI_RED+"---> "+identity+", has entered "+currentRooms.get(roomIndex).getRoomName()+". Be nice!"+ANSI_RESET;
+      broadcastRoom(msg, roomID, this, "Server", false); // Broadcasts to all other clients.
+
+      // Server to send NewIdentity message to client
+      JSONWriter jsonBuild = new JSONWriter();
+      String newIDMessage = jsonBuild.buildJSONNewID("", identity);
+      sendMessage(newIDMessage + "\n");
+
       welcome(identity, this); // Generates a welcome JSON string message and flushes it to the client, which will post it on the client's screen.
+
 
       // While connection is alive we listen to their socket and broadcast their messages appropriately.
       while (connectionAlive) {
@@ -336,9 +450,10 @@ public class Server {
 
             // Here we have conditionals to interpret the message type and act accordingly.
             if (type.equals("message")) {
-              System.out.format("Incoming Message JSON String: %s%n", in);
+              //broadcastRoom(msg, roomID, this, identity, false);     // "this" -> ignore ourselves in the broadcast
               broadcastRoom(msg, roomID, null, identity, false);     // "this" -> ignore ourselves in the broadcast
             }
+
             else if (type.equals("identitychange")) {
               String oldIdentity = identity;
               String newIdentity = jsonNode.get("identity").asText();
@@ -349,18 +464,33 @@ public class Server {
                 broadcastRoom(newIdentityMessage, roomID, null, "Server", true);
               }
             }
+
             else if (type.equals("join")) {
               String newRoom = jsonNode.get("roomid").asText();
               System.out.println("User to join " + newRoom);
               String currentRoom = roomID;
               joinRoom(this, currentRoom, newRoom);
             }
+
             else if (type.equals("list")) {
-              getRoomList(this);
+              getRoomList(this, false, null);
             }
+
+            else if (type.equals("createroom")) {
+              String newRoomID = jsonNode.get("roomid").asText();
+              createNewRoom(this, newRoomID);
+            }
+
+            else if (type.equals("delete")) {
+              String roomToDelete = jsonNode.get("roomid").asText();
+              deleteRoom(this, roomToDelete);
+
+            }
+
             else if (type.equals("quit")) {
               quit(this, roomID);
             }
+
           } else {
             //close();
             connectionAlive = false;

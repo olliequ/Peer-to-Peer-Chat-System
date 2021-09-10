@@ -6,6 +6,7 @@ import java.net.Socket;
 public class Client {
   private final String serverAddress;
   private final int serverPort;
+  //protected String Identity = "";
   protected String Identity = "1stEver";
   protected boolean ReadyToRock = false;
   protected String CurrentRoom = "Wrong room";
@@ -16,6 +17,13 @@ public class Client {
   private boolean Connected = false;
   public static final String ANSI_GREEN = "\u001B[32m";
   public static final String ANSI_RESET = "\u001B[0m";
+
+
+  protected String RequestedIdentity = "";
+  protected boolean gotWelcome = false;
+  protected String roomToCreate = "";
+  protected String roomToDelete = "";
+
 
   public Client(String serverAddress, int serverPort) {
     this.serverAddress = serverAddress;
@@ -38,7 +46,6 @@ public class Client {
   private boolean connect() {
     try {
       this.socket = new Socket(serverAddress, serverPort);
-      // System.out.println("Client port is " + socket.getLocalPort());
       this.ToServer = socket.getOutputStream();
       this.FromServer = socket.getInputStream();
       this.reader = new BufferedReader(new InputStreamReader(FromServer));
@@ -52,15 +59,34 @@ public class Client {
   public String getIdentity() {
       return this.Identity;
   }
-
   public void setIdentity(String identity) {
     this.Identity = identity;
+  }
+
+  public String getRequestedIdentity() {
+    return this.RequestedIdentity;
+  }
+  public void setRequestedIdentity(String requestedIdentity) {
+    this.RequestedIdentity = requestedIdentity;
+  }
+
+  public boolean getWelcomeStatus() {
+    return this.gotWelcome;
+  }
+  public void setWelcomeStatus(boolean welcome) {
+    this.gotWelcome = welcome;
+  }
+
+  public String getRoomToCreate() {
+    return this.roomToCreate;
+  }
+  public void setRoomToCreate(String roomID) {
+    this.roomToCreate = roomID;
   }
 
   public boolean getReadyToRock() {
     return this.ReadyToRock;
   }
-
   public void setReadyToRock(boolean readyOrNa) {
     this.ReadyToRock = readyOrNa;
   }
@@ -68,10 +94,10 @@ public class Client {
   public String getCurrentRoom() {
     return this.CurrentRoom;
   }
-
   public void setCurrentRoom(String CurrentRoom) {
     this.CurrentRoom = CurrentRoom;
   }
+
 
   private void close() {
     try {
