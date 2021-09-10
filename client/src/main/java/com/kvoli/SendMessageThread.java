@@ -34,17 +34,14 @@ public class SendMessageThread extends Thread {
         Scanner keyboard = new Scanner(System.in);
         ParentClientID = this.client.getIdentity();
         boolean sendingMessages = true;
-        String text = "";
         while (sendingMessages) {
-            boolean canStart = this.client.ReadyToRock;
-            if (this.client.getReadyToRock()) {
-                boolean canExit = true;
-                    // System.out.format("%s> ", this.client.Identity);
-                    text = keyboard.nextLine();
-            }
-             // Console console = System.console();
-             // String text = "";
-             // text = console.readLine("Type something: ");
+            String text = "";
+            text = keyboard.nextLine();
+
+            // Console console = System.console();
+            // String text = "";
+            // text = console.readLine("Type something: ");
+
             // First parse the client input. Are they issuing a server command?
             // Client command IDENTITYCHANGE
             if (text.contains("#identitychange")) {
@@ -119,7 +116,7 @@ public class SendMessageThread extends Thread {
                         String x = objectMapper.writeValueAsString(message);
                         // System.out.println(x);
                         writer.println(x);      // Send `x` to the writer, and flush to actually send over the network.
-                        writer.flush();         // Why doesn't flushing this to the server not also make appear on own screen -- as it's still going to serverInputStream!
+                        writer.flush();
                     } catch (JsonProcessingException e) {
                         e.printStackTrace();
                     }
