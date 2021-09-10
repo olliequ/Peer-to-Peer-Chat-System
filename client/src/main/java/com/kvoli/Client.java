@@ -6,7 +6,8 @@ import java.net.Socket;
 public class Client {
   private final String serverAddress;
   private final int serverPort;
-  protected String Identity = "original";
+  protected String Identity = "1stEver";
+  protected boolean ReadyToRock = false;
   protected String CurrentRoom = "Wrong room";
   protected Socket socket;
   protected OutputStream ToServer;
@@ -54,6 +55,14 @@ public class Client {
 
   public void setIdentity(String identity) {
     this.Identity = identity;
+  }
+
+  public boolean getReadyToRock() {
+    return this.ReadyToRock;
+  }
+
+  public void setReadyToRock(boolean readyOrNa) {
+    this.ReadyToRock = readyOrNa;
   }
 
   public String getCurrentRoom() {

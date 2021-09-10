@@ -27,14 +27,12 @@ public class ServerPackets {
     public static class Message {
         public String identity;
         public String content;
-        public String FromServerOrNot = "True";
 
         public Message() {}
 
-        public Message(String identity, String content, String FromServerOrNot) {
+        public Message(String identity, String content) {
             this.identity = identity;
             this.content = content;
-            this.FromServerOrNot = FromServerOrNot;
         }
     }
 

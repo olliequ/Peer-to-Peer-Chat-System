@@ -7,19 +7,20 @@ import com.kvoli.base.Base;
 import com.kvoli.base.ClientPackets;
 import com.kvoli.base.JSONReader;
 
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
-
+import java.io.Console;
 
 public class SendMessageThread extends Thread {
     private Client client;
     private PrintWriter writer;
     private Socket socket;
     public String ParentClientID = "";
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_RESET = "\u001B[0m";
 
     public SendMessageThread(Client client) {
         this.client = client;
@@ -29,18 +30,21 @@ public class SendMessageThread extends Thread {
 
     @Override
     public void run() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        Scanner keyboard = new Scanner(System.in);
+        ParentClientID = this.client.getIdentity();
         boolean sendingMessages = true;
+        String text = "";
         while (sendingMessages) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            ParentClientID = this.client.getIdentity();
-            // System.out.format("%s> %n", ParentClientID);
-            this.client.setIdentity("newID");
-            ParentClientID = this.client.Identity;
-            // System.out.format("%s> %n", ParentClientID);
-            Scanner keyboard = new Scanner(System.in);
-            System.out.format("%s> ", this.client.Identity);
-            String text = keyboard.nextLine();
-
+            boolean canStart = this.client.ReadyToRock;
+            if (this.client.getReadyToRock()) {
+                boolean canExit = true;
+                    // System.out.format("%s> ", this.client.Identity);
+                    text = keyboard.nextLine();
+            }
+             // Console console = System.console();
+             // String text = "";
+             // text = console.readLine("Type something: ");
             // First parse the client input. Are they issuing a server command?
             // Client command IDENTITYCHANGE
             if (text.contains("#identitychange")) {
@@ -50,7 +54,7 @@ public class SendMessageThread extends Thread {
                 ClientPackets.IdentityChange identityChange = new ClientPackets.IdentityChange(identity);
                 try {
                     String msg = objectMapper.writeValueAsString(identityChange);
-                    System.out.format("IC JSON string flushed to Server: %s", msg);
+                    // System.out.format("IC JSON string flushed to Server: %s%n", msg);
                     writer.println(msg);
                     writer.flush();             // Why not printing to all clients? writer is
                 } catch (JsonProcessingException e) {
@@ -109,20 +113,21 @@ public class SendMessageThread extends Thread {
             // Else they aren't issuing a command. Assume it's a standard message.
             else {
                 // Wrap this input into JSON.
-                ClientPackets.Message message = new ClientPackets.Message(text);
-                try {
-                    String x = objectMapper.writeValueAsString(message);
-                    // System.out.println(x);
-                    writer.println(x);      // Send `x` to the writer, and flush to actually send over the network.
-                    writer.flush();         // Why doesn't flushing this to the server not also make appear on own screen -- as it's still going to serverInputStream!
-
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
+                if (!text.equals("")) {
+                    ClientPackets.Message message = new ClientPackets.Message(text);
+                    try {
+                        String x = objectMapper.writeValueAsString(message);
+                        // System.out.println(x);
+                        writer.println(x);      // Send `x` to the writer, and flush to actually send over the network.
+                        writer.flush();         // Why doesn't flushing this to the server not also make appear on own screen -- as it's still going to serverInputStream!
+                    } catch (JsonProcessingException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else if (text.equals("") && this.client.getReadyToRock()) {
+                    System.out.println(ANSI_YELLOW+"---> You can't send nothing! Try something else."+ANSI_RESET);
                 }
             }
         }
-
     }
-
-
 }

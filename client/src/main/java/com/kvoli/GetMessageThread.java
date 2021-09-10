@@ -18,6 +18,8 @@ public class GetMessageThread extends Thread {
     private Client client;
     private BufferedReader reader;
     private Socket socket;
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_RESET = "\u001B[0m";
 
     public GetMessageThread(Client client) {
         this.client = client;
@@ -44,12 +46,12 @@ public class GetMessageThread extends Thread {
                     if (type.equals("message")) {
                         String content = jsonNode.get("content").asText();
                         String IncomingIdentity = jsonNode.get("identity").asText();
-                        String IsThisOriginallyAServerMessage = jsonNode.get("FromServerOrNot").asText();
-                        if (IsThisOriginallyAServerMessage.equals("Yes")) {
+                        if (this.client.getIdentity().equals("1stEver")) {
                             this.client.setIdentity(IncomingIdentity);
+                            this.client.setReadyToRock(true);
                             System.out.println(content);
                         }
-                        else if (IsThisOriginallyAServerMessage.equals("YesButIgnore")) {
+                        else if (IncomingIdentity.equals("Server")) {
                             System.out.println(content);
                         }
                         else {
@@ -66,10 +68,10 @@ public class GetMessageThread extends Thread {
                         }
                         else if (former.equals(this.client.Identity)) {
                             this.client.setIdentity(newIdentity);
-                            System.out.format("You have successfully changed identities from %s to %s :-)%n", former, newIdentity);
+                            System.out.format(ANSI_YELLOW+"---> You have successfully changed identities from %s to %s :-)%n"+ANSI_RESET, former, newIdentity);
                         }
                         else {
-                            System.out.println(former + " has changed names to " + newIdentity + "!");
+                            System.out.println(ANSI_YELLOW+"---> "+former + " has changed name to " + newIdentity + "!"+ANSI_RESET);
                         }
                     }
 

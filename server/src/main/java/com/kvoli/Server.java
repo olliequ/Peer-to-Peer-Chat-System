@@ -83,23 +83,23 @@ public class Server {
     String welcomeClient = "---> Welcome! You are connected as: "+ANSI_CYAN+clientIdentity+ANSI_RESET+"\n---> Here's a rundown on the currently active rooms:";
     String FromServerOrNot = "Yes";
     JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
-    String serverMessage = jsonBuild.buildJSON(welcomeClient, clientIdentity, FromServerOrNot); // Calls method that builds the JSON String.
-    System.out.format("%n"+ANSI_BLUE+"Sending "+"JSON string. It is below:%n"+ANSI_RESET);
+    String serverMessage = jsonBuild.buildJSON(welcomeClient, clientIdentity); // Calls method that builds the JSON String.
+    System.out.format("%n"+ANSI_BLUE+"Sending "+"JSON string(s). Check below:%n"+ANSI_RESET);
     System.out.format("Welcome JSON String: %s%n", serverMessage);
     conn.sendMessage(serverMessage);
     conn.sendMessage("\n");
 
     for (Room room: currentRooms) {
       String RoomInfo = "\t\t- "+room.getRoomName() + " has " + room.getRoomSize() + " guest(s) currently inside.";
-      String roomInfoJSON = jsonBuild.buildJSON(RoomInfo, clientIdentity, "YesButIgnore");
+      String roomInfoJSON = jsonBuild.buildJSON(RoomInfo, "Server");
       System.out.format("Printing Room JSON String: %s%n", roomInfoJSON);
       conn.sendMessage(roomInfoJSON);
       conn.sendMessage("\n");
     }
 
     JSONWriter jsonBuild_1 = new JSONWriter();   // Instantiate object that has method to build JSON string.
-    String howToType = "---> Type something next to the prompt below to send a message!";
-    String howToTypeJSON = jsonBuild_1.buildJSON(howToType, clientIdentity, "YesButIgnore"); // Calls method that builds the JSON String.
+    String howToType = "---> You've landed in MainHall. Type something next to the prompt below to send a message!";
+    String howToTypeJSON = jsonBuild_1.buildJSON(howToType, "Server"); // Calls method that builds the JSON String.
     System.out.format("howToType JSON String: %s%n", howToTypeJSON);
     conn.sendMessage(howToTypeJSON);
     conn.sendMessage("\n");
@@ -136,7 +136,7 @@ public class Server {
    * @param roomID    The roomID to broadcast the message to
    * @param ignored
    */
-  private synchronized void broadcastRoom(String message, String roomID, ServerConnection ignored, String ID, boolean isJson, String FromServerOrNot) {
+  private synchronized void broadcastRoom(String message, String roomID, ServerConnection ignored, String ID, boolean isJson) {
     for (ServerConnection c : currentConnections) {
       if (c.roomID.equals(roomID) && !isJson) {
         if (ignored == null || !ignored.equals(c)) {
@@ -146,9 +146,9 @@ public class Server {
            First we need to build a JSON string out of the client message and append ID.
            */
           JSONWriter jsonBuild = new JSONWriter();
-          String serverMessage = jsonBuild.buildJSON(message, ID, FromServerOrNot);
-          System.out.format(ANSI_BLUE+"%nSending "+"JSON string. It is below:%n"+ANSI_RESET);
-          System.out.println("BroadcastRoom JSON: " + serverMessage);             // Optional: used for debugging
+          String serverMessage = jsonBuild.buildJSON(message, ID);
+          System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+          System.out.println("BroadcastRoom JSON: " + serverMessage);
 
           // Now broadcast the JSON string to everyone in the room.
           c.sendMessage(serverMessage);
@@ -160,7 +160,8 @@ public class Server {
       else if (c.roomID.equals(roomID) && isJson) {
         if (ignored == null || !ignored.equals(c)) {
           // Broadcast the JSON string to everyone in the room.
-          System.out.println("Changing Identity JSON_: " + message+"\n");
+          System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+          System.out.println("BroadcastRoom JSON: " + message);
           c.sendMessage(message);
           c.sendMessage("\n");
         }
@@ -212,7 +213,7 @@ public class Server {
 
 
   // Method to allow a client to join a room
-  private synchronized void joinRoom(ServerConnection conn, String oldRoom, String newRoom, String FromServerOrNot) {
+  private synchronized void joinRoom(ServerConnection conn, String oldRoom, String newRoom) {
     // First check if the new 'room' is even valid
     boolean isValid = false;
     for (Room r: currentRooms) {
@@ -235,9 +236,9 @@ public class Server {
           // Send message to everyone in the old room that the client is leaving.
           JSONWriter jsonBuild = new JSONWriter();
           String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, oldRoom, newRoom);
-          broadcastRoom(serverMessage, oldRoom, conn, conn.identity, true, FromServerOrNot);
+          broadcastRoom(serverMessage, oldRoom, conn, conn.identity, true);
           // Send message to everyone in the new room that the client has joined
-          broadcastRoom(serverMessage, newRoom, conn, conn.identity, true, FromServerOrNot);
+          broadcastRoom(serverMessage, newRoom, conn, conn.identity, true);
         }
       }
       // TODO: If client changing to MainHall, server to send RoomContents msg to client (for MainHall) and
@@ -275,11 +276,11 @@ public class Server {
   }
 
   // TODO: Method for the Quit protocol.
-  private synchronized void quit(ServerConnection conn, String roomID, String FromServerOrNot) {
+  private synchronized void quit(ServerConnection conn, String roomID) {
     // Send RoomChange message to all clients in the room
     JSONWriter jsonBuild = new JSONWriter();
     String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, roomID, "");
-    broadcastRoom(serverMessage, roomID, conn, conn.identity, true, FromServerOrNot);
+    broadcastRoom(serverMessage, roomID, conn, conn.identity, true);
 
     // Remove user from the current room (handled by the close() method).
     conn.close();
@@ -314,7 +315,7 @@ public class Server {
       // Manage the connection here
       connectionAlive = true;
       String msg = ANSI_RED+"---> "+identity+", has entered "+currentRooms.get(roomIndex).getRoomName()+". Be nice!"+ANSI_RESET; // Tells new client where it is. The line below will inform the other clients.
-      broadcastRoom(msg, roomID, this, "Server", false, "Yes"); // Broadcasts initial entrance message to all other clients.
+      broadcastRoom(msg, roomID, this, "Server", false); // Broadcasts initial entrance message to all other clients.
       welcome(identity, this); // Generates a welcome JSON string message and flushes it to the client, which will post it on the client's screen.
 
       // While connection is alive we listen to their socket and broadcast their messages appropriately.
@@ -335,29 +336,30 @@ public class Server {
 
             // Here we have conditionals to interpret the message type and act accordingly.
             if (type.equals("message")) {
-              broadcastRoom(msg, roomID, this, identity, false, "No");     // "this" -> ignore ourselves in the broadcast
+              System.out.format("Incoming Message JSON String: %s%n", in);
+              broadcastRoom(msg, roomID, null, identity, false);     // "this" -> ignore ourselves in the broadcast
             }
             else if (type.equals("identitychange")) {
               String oldIdentity = identity;
               String newIdentity = jsonNode.get("identity").asText();
               boolean isValidIdentity = verifyIdentity(this, newIdentity);
               String newIdentityMessage = changeIdentity(this, newIdentity, isValidIdentity);
-              // System.out.format("CI JSON String: %s%n", newIdentityMessage);
               if (isValidIdentity) {
-                broadcastRoom(newIdentityMessage, roomID, null, "Server", true, "YesCI");
+                System.out.format("CI JSON String: %s%n", newIdentityMessage);
+                broadcastRoom(newIdentityMessage, roomID, null, "Server", true);
               }
             }
             else if (type.equals("join")) {
               String newRoom = jsonNode.get("roomid").asText();
               System.out.println("User to join " + newRoom);
               String currentRoom = roomID;
-              joinRoom(this, currentRoom, newRoom, "No");
+              joinRoom(this, currentRoom, newRoom);
             }
             else if (type.equals("list")) {
               getRoomList(this);
             }
             else if (type.equals("quit")) {
-              quit(this, roomID, "No");
+              quit(this, roomID);
             }
           } else {
             //close();
