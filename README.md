@@ -7,16 +7,16 @@
 - Client can #join room. Client can call #list. Client can #quit. 
 
 ## TODO: Client protocols (see ClientPackets in base)
--  who
--  createroom
--  delete
+-  who               
+-  delete            <- 99% done. Has one *visual* bug that I need to fix but actual functionality is 100% working.
 -  quit              <- half done.
 
 ## TODO: Server protocols (see ServerPackets in base)
 - roomcontents
 
 ## TODO: Other
-- I don't know how to represent a JSON array in Java (see RoomContents class in ServerPackets).
+- Get command line input as per spec.
+- 
 
 # Challenge 05
 
