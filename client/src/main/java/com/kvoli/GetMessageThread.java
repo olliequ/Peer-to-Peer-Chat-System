@@ -87,10 +87,11 @@ public class GetMessageThread extends Thread {
                         // Handle identity assignment to someone who sent a changeidentity request.
                         else if (newIdentity.equals(this.client.getRequestedIdentity())) {
                             this.client.setIdentity(newIdentity);
-                        }
-                        else {
                             System.out.println(former + " is now " + newIdentity);
                         }
+//                        else {
+//                            System.out.println(former + " is now " + newIdentity);
+//                        }
                     }
 
                     // Received ROOMCHANGE from server
@@ -127,6 +128,7 @@ public class GetMessageThread extends Thread {
 
                     }
 
+                    // TODO: NOT PROPER
                     // Received ROOMLIST from server
                     else if (type.equals("roomlist")) {
                         boolean alreadyExistsOrInvalid = false;
@@ -134,20 +136,23 @@ public class GetMessageThread extends Thread {
                         // For when a client sends #delete. Track if they were successful in deleting their room.
                         boolean deleteDesiredRoom = false;
 
+                        System.out.println(jsonNode.get("rooms"));
+
                         // Logic for CreateRoom where room already exists.
                         // Iterate through list. If our desired room is not present then the room already exists.
                         for (JsonNode node : jsonNode.get("rooms")) {
                             String currentRoom = node.asText();
                             currentRoom = currentRoom.strip();
 
-//                            System.out.println("Current: " + currentRoom);
-//                            System.out.println("To delete : " + this.client.roomToDelete);
-
+                            // Check if current room doesn't contain the room we want to create
                             if (!currentRoom.contains(this.client.getRoomToCreate())) {
-                                //System.out.println(currentRoom + "doesn't contain " + this.client.getRoomToCreate());
+                                System.out.println(currentRoom + "doesn't contain " + this.client.getRoomToCreate());
                                 alreadyExistsOrInvalid = true;
                             }
-                            else {
+                            // If it does contain the room we want to create then room creation was successful
+                            else if (currentRoom.contains(this.client.getRoomToCreate())) {
+                                System.out.println(currentRoom);
+                                System.out.println("List contains the room ");
                                 roomInList = true;
                                 alreadyExistsOrInvalid = false;
                             }
