@@ -105,7 +105,12 @@ public class SendMessageThread extends Thread {
                     //System.out.println(msg);
                     writer.println(msg);
                     writer.flush();
-                    this.client.setRoomToCreate(createRoomMsg);                 // Update client variable.
+                    if (createRoomMsg.equals("")) {
+                        this.client.setRoomToCreate("EmptyString");                 // Update client variable.
+                    }
+                    else {
+                        this.client.setRoomToCreate(createRoomMsg);                 // Update client variable.
+                    }
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                 }
