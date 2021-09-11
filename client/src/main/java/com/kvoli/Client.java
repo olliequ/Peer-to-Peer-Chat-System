@@ -9,7 +9,7 @@ public class Client {
   //protected String Identity = "";
   protected String Identity = "1stEver";
   protected boolean ReadyToRock = false;
-  protected String CurrentRoom = "Wrong room";
+  protected String currentRoom = "Wrong room";
   protected Socket socket;
   protected OutputStream ToServer;
   protected InputStream FromServer;
@@ -23,6 +23,8 @@ public class Client {
   protected boolean gotWelcome = false;
   protected String roomToCreate = "";
   protected String roomToDelete = "";
+  protected boolean clientToQuit = false;
+  protected boolean clientToCreateRoom = false;
 
 
   public Client(String serverAddress, int serverPort) {
@@ -92,14 +94,35 @@ public class Client {
   }
 
   public String getCurrentRoom() {
-    return this.CurrentRoom;
+    return this.currentRoom;
   }
   public void setCurrentRoom(String CurrentRoom) {
-    this.CurrentRoom = CurrentRoom;
+    this.currentRoom = CurrentRoom;
+  }
+
+  public String getRoomToDelete() {
+    return this.roomToDelete;
+  }
+  public void setRoomToDelete(String room) {
+    this.roomToDelete = room;
+  }
+
+  public boolean getClientToQuit() {
+    return this.clientToQuit;
+  }
+  public void setClientToQuit(boolean quitStatus) {
+    this.clientToQuit = quitStatus;
+  }
+
+  protected boolean getClientToCreateRoom() {
+    return this.clientToCreateRoom;
+  }
+  protected void setClientToCreateRoom(boolean toCreate) {
+    this.clientToCreateRoom = toCreate;
   }
 
 
-  private void close() {
+  protected void close() {
     try {
       socket.close();
     } catch (IOException e) {

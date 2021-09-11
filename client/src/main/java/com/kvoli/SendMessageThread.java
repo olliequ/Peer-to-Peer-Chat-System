@@ -57,7 +57,7 @@ public class SendMessageThread extends Thread {
                 ClientPackets.IdentityChange identityChange = new ClientPackets.IdentityChange(identity);
                 try {
                     String msg = objectMapper.writeValueAsString(identityChange);
-                    System.out.format("IC JSON string flushed to Server: %s", msg);
+                    //System.out.format("IC JSON string flushed to Server: %s", msg);
                     writer.println(msg);
                     writer.flush();             // Why not printing to all clients? writer is
                 } catch (JsonProcessingException e) {
@@ -99,7 +99,7 @@ public class SendMessageThread extends Thread {
             else if (text.contains("#createroom")) {
                 String createRoomMsg = text.replaceAll("#createroom", ""); // These 2 lines not needed as listMsg isn't an argument?
                 createRoomMsg = createRoomMsg.stripLeading();
-
+                this.client.setClientToCreateRoom(true);
                 ClientPackets.CreateRoom createRoom = new ClientPackets.CreateRoom(createRoomMsg);
                 try {
                     String msg = objectMapper.writeValueAsString(createRoom);
@@ -117,6 +117,7 @@ public class SendMessageThread extends Thread {
             else if (text.contains("#quit")) {
                 String quit = text.replaceAll("#quit", "");
                 quit = quit.stripLeading();
+                this.client.setClientToQuit(true);                  // Tell getMessageThread that we want to leave.
 
                 ClientPackets.Quit quitMsg = new ClientPackets.Quit();
 
@@ -134,6 +135,9 @@ public class SendMessageThread extends Thread {
                 String delete = text.replaceAll("#delete", "");
                 delete = delete.stripLeading();
                 ClientPackets.Delete deleteMsg = new ClientPackets.Delete(delete);
+
+                this.client.setRoomToDelete(delete);
+                //System.out.println("The room to delete is " + roomToDelete);
 
                 try {
                     String msg = objectMapper.writeValueAsString(deleteMsg);

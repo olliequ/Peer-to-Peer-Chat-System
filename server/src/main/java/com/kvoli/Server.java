@@ -47,11 +47,12 @@ public class Server {
         // Note: by default, new users are added to the Main Hall (roomID = "MainHall").
         guestCount += 1;
         String clientName = "Guest" + guestCount;
-        currentRooms.get(0).addUser(clientName); // Go to 0 because always land on MainHall.
+        //currentRooms.get(0).addUser(clientName); // Go to 0 because always land on MainHall.
 
         // Start a connection which will have its own thread of execution. Then we don't care about it anymore.
         // The connection will be able to handle itself.
-        ServerConnection currentConnection = new ServerConnection(socket, clientName, "MainHall");
+        //ServerConnection currentConnection = new ServerConnection(socket, clientName, "MainHall");
+        ServerConnection currentConnection = new ServerConnection(socket, clientName, "");
         currentConnection.start();
         connect(currentConnection);
       }
@@ -80,7 +81,6 @@ public class Server {
     String FromServerOrNot = "Yes"; // Make this a boolean instead?
     JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
 
-    // NOTE: CHANGED 2ND PARAM ("Server" -> clientIdentity)
     String serverMessage = jsonBuild.buildJSON(welcomeClient, "Server"); // Calls method that builds the JSON String.
 
     System.out.format("%n"+ANSI_BLUE+"Sending "+"JSON string(s). Check below:%n"+ANSI_RESET);
@@ -96,12 +96,13 @@ public class Server {
       conn.sendMessage("\n");
     }
 
-    JSONWriter jsonBuild_1 = new JSONWriter();   // Instantiate object that has method to build JSON string.
-    String howToType = "---> You've landed in MainHall. Type something next to the prompt below to send a message!";
-    String howToTypeJSON = jsonBuild_1.buildJSON(howToType, "Server"); // Calls method that builds the JSON String.
-    System.out.format("howToType JSON String: %s%n", howToTypeJSON);
-    conn.sendMessage(howToTypeJSON);
-    conn.sendMessage("\n");
+    // Handled client side
+//    JSONWriter jsonBuild_1 = new JSONWriter();   // Instantiate object that has method to build JSON string.
+//    String howToType = "---> You've landed in MainHall. Type something next to the prompt below to send a message!";
+//    String howToTypeJSON = jsonBuild_1.buildJSON(howToType, "Server"); // Calls method that builds the JSON String.
+//    System.out.format("howToType JSON String: %s%n", howToTypeJSON);
+//    conn.sendMessage(howToTypeJSON);
+//    conn.sendMessage("\n");
   }
 
   // OLD WELCOME
@@ -214,6 +215,14 @@ public class Server {
       String oldID = conn.identity;
       conn.identity = newIdentity;
 
+      // If this client is the owner of existing rooms then we need to update their owner status to reflect new identity.
+      for (Room r: currentRooms) {
+        if (r.getRoomOwner().equals(oldID)) {
+          r.setRoomOwner(newIdentity);
+        }
+      }
+
+
       // Update client room roomContents with new identity.
       currentRooms.get(getRoomIndex(conn.roomID)).changeUserID(oldID, newIdentity);
       JSONWriter jsonBuild = new JSONWriter();
@@ -226,19 +235,27 @@ public class Server {
   // Method to allow a client to join a room
   private synchronized void joinRoom(ServerConnection conn, String oldRoom, String newRoom) {
     // First check if the new 'room' is even valid
-    boolean isValid = false;
+    boolean newRoomIsValid = false;
     for (Room r: currentRooms) {
       if (r.getRoomName().equals(newRoom)) {
         // Room is valid. Add user to this new room.
-        isValid = true;
+        newRoomIsValid = true;
         r.addUser(conn.identity);
         conn.roomID = newRoom;
         break;
       }
     }
 
-    // Logic to remove a client from their old room
-    if (isValid) {
+     //Logic to handle new clients. By default, their old room is an empty string.
+    if (newRoomIsValid && oldRoom.equals("")) {
+      JSONWriter jsonBuild = new JSONWriter();
+      String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, oldRoom, newRoom);
+      conn.sendMessage(serverMessage + "\n");
+    }
+
+    // Logic to remove an existing client from their old room.
+    // Note - differentiate new and existing clients by oldRoom field. If oldRoom is empty then they are a new user.
+    else if (newRoomIsValid && (!oldRoom.equals(""))) {
       // Jump to the 'old' room and remove client from it.
       for (Room r: currentRooms) {
         if (r.getRoomName().equals(oldRoom)) {
@@ -255,8 +272,6 @@ public class Server {
       // TODO: If client changing to MainHall, server to send RoomContents msg to client (for MainHall) and
       // TODO: ...RoomList message after the RoomChange message.
     }
-
-    // TODO: NEW conditional: if isValid AND old room = "" then this is a new user that must be moved to the MainHall!
 
     else {
       // Unsuccessful. Send a message to the client.
@@ -383,10 +398,13 @@ public class Server {
     // Send RoomChange message to all clients in the room
     JSONWriter jsonBuild = new JSONWriter();
     String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, roomID, "");
+    System.out.println(serverMessage);
     broadcastRoom(serverMessage, roomID, conn, conn.identity, true);
 
-    // Remove user from the current room (handled by the close() method).
+    // Send disconnect message to the requesting client
+    conn.sendMessage(serverMessage + "\n");
     conn.close();
+
   }
 
 
@@ -407,6 +425,7 @@ public class Server {
     private String roomID;
     private int roomIndex;
     private String identity;
+    private boolean gracefulDisconnection = false;
 
     public ServerConnection (Socket socket, String identity, String roomID) throws IOException {
       this.socket = socket;
@@ -429,7 +448,9 @@ public class Server {
       String newIDMessage = jsonBuild.buildJSONNewID("", identity);
       sendMessage(newIDMessage + "\n");
 
+      // Welcome the user (show current rooms) and then move them to MainHall.
       welcome(identity, this); // Generates a welcome JSON string message and flushes it to the client, which will post it on the client's screen.
+      joinRoom(this, "", "MainHall");
 
 
       // While connection is alive we listen to their socket and broadcast their messages appropriately.
@@ -500,7 +521,11 @@ public class Server {
           connectionAlive = false;
         }
       }
-      close();                                        // Close connections of those that left
+
+      if (gracefulDisconnection == false) {
+        // If client didn't disconnect via #quit then force close the connection.
+        close();                                        // Close connections of those that left
+      }
     }
 
     public void sendMessage(String msg) {
@@ -509,6 +534,8 @@ public class Server {
     }
 
     public void close() {
+
+
       try {
         // Traverse to the room the client belongs to and remove client from that room
         currentRooms.get(getRoomIndex(roomID)).removeUser(identity);
@@ -517,11 +544,15 @@ public class Server {
         writer.close();
         socket.close();
         this.roomID = "NULL";
+        gracefulDisconnection = true;
 
       } catch (IOException e) {
         System.out.println(e.getMessage());
       }
+
+
+      }
     }
 
   }
-}
+
