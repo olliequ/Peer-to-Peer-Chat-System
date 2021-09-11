@@ -89,6 +89,9 @@ public class GetMessageThread extends Thread {
                             this.client.setIdentity(newIdentity);
                             System.out.println(former + " is now " + newIdentity);
                         }
+                        else {
+                            System.out.println(former + " is now " + newIdentity);
+                        }
                     }
 
                     // Received ROOMCHANGE from server
@@ -122,7 +125,24 @@ public class GetMessageThread extends Thread {
                         if (identity.equals(this.client.getIdentity()) && validChange == true) {
                             this.client.setCurrentRoom(roomid);
                         }
+                    }
 
+                    else if (type.equals("roomcontents")) {
+                        String owner =  jsonNode.get("owner").asText();
+                        String roomid = jsonNode.get("roomid").asText();
+
+                        // Iterate over the identities array from RoomContents and print each user to the screen.
+                        System.out.print(roomid + " contains: ");
+                        for (JsonNode node: jsonNode.get("identities")) {
+                            String person = node.asText();
+                            if (person.equals(owner)) {
+                                System.out.print(person + "* ");
+                            }
+                            else {
+                                System.out.print(person + " ");
+                            }
+                        }
+                        System.out.println();
                     }
 
                     // TODO: NOT PROPER
@@ -134,42 +154,52 @@ public class GetMessageThread extends Thread {
                         boolean deleteDesiredRoom = false;
                         boolean displayList = true;
 
-                        //System.out.println(jsonNode.get("rooms"));
+                        //System.out.println(this.client.getListCommandStatus());
 
                         // Logic for CreateRoom where room already exists.
                         // Iterate through list. If our desired room is not present then the room already exists.
                         for (JsonNode node : jsonNode.get("rooms")) {
                             String currentRoom = node.asText();
                             JsonNode jsonNode1 =  objectMapper.readTree(String.valueOf(currentRoom));
-                            String name = jsonNode1.get("roomid").asText();
+                            String roomName = jsonNode1.get("roomid").asText();
                             String count = jsonNode1.get("count").asText();
-                            System.out.println("Room " + name + " with count " + count);
 
-                            //System.out.println(currentRoom);
 
                             // Check if current room doesn't contain the room we want to create
-                            if (!currentRoom.contains(this.client.getRoomToCreate())) {
+                            if (!roomName.equals(this.client.getRoomToCreate())) {
                                 alreadyExistsOrInvalid = true;
                             }
                             // If it does contain the room we want to create then room creation was successful
-                            else if (currentRoom.contains(this.client.getRoomToCreate())) {
+                            else if (roomName.equals(this.client.getRoomToCreate())) {
                                 roomInList = true;
                                 alreadyExistsOrInvalid = false;
                             }
-                            if (currentRoom.contains(this.client.getRoomToDelete())) {
-                                // Room deletion not successful
-                            }
-                            else {
+                            //if (roomName.equals(this.client.getRoomToDelete()) || ((this.client.getRoomToDelete()).equals(""))) {
+                            // If room not in list then it has been deleted
+                            if (roomName.equals(this.client.getRoomToDelete()) == false) {
+                                //System.out.println("ROOMNAME " + roomName + " EQUALS " + this.client.getRoomToDelete());
                                 deleteDesiredRoom = true;
                             }
+                            else if (roomName.equals(this.client.getRoomToDelete())) {
+                                deleteDesiredRoom = false;
+                            }
+                            
+//                            else if ((!roomName.equals(this.client.getRoomToDelete()))) {
+//                                deleteDesiredRoom = true;
+//                            }
                         }
-                        if (alreadyExistsOrInvalid && roomInList == false) {
+//                        System.out.println("ALREADYEXISTS/INVALID = " + alreadyExistsOrInvalid);
+//                        System.out.println("IN LIST = " + roomInList);
+//                        System.out.println("DELETE DESIRED = " + deleteDesiredRoom);
+
+
+                        if (alreadyExistsOrInvalid && roomInList == false && this.client.getListCommandStatus() == false && this.client.getDeleteStatus() == false) {
                             System.out.println("Room " + this.client.getRoomToCreate() + " is invalid or already in use.");
                             this.client.setRoomToCreate("");
                             displayList = false;
                         }
 
-                        else if ((!alreadyExistsOrInvalid) && (roomInList == true) && (deleteDesiredRoom == false)){
+                        else if ((!alreadyExistsOrInvalid) && (roomInList == true) && this.client.getListCommandStatus() == false && this.client.getDeleteStatus() == false){
                             // If our desired room was present in the received list then room creation was successful.
                             // We also need to reset the clients RoomToCreate string to empty.
                             // We have this additional condition to capture edge cases.
@@ -180,31 +210,36 @@ public class GetMessageThread extends Thread {
                             }
 
                         }
-                        else if ((!alreadyExistsOrInvalid) && (deleteDesiredRoom == true)) {
+                        else if ((alreadyExistsOrInvalid) && (roomInList == false) && this.client.getListCommandStatus() == false && this.client.getDeleteStatus() == true) {
+                            // If our room to delete wasn't in the list then it was deleted
                             System.out.println("Room " + this.client.roomToDelete + " was deleted.");
                             this.client.setRoomToDelete("");                // Reset
-                            displayList = false;
+                            this.client.setDeleteStatus(false);
+
                         }
 
                         // Now display the list of rooms....
-                        if (displayList) {
+                        if (this.client.getListCommandStatus() == true) {
+                            this.client.setListCommandStatus(false);
                             for (JsonNode node : jsonNode.get("rooms")) {
                                 String currentRoom = node.asText();
-
-
-
-
+                                JsonNode jsonNode1 =  objectMapper.readTree(String.valueOf(currentRoom));
+                                String roomName = jsonNode1.get("roomid").asText();
+                                String count = jsonNode1.get("count").asText();
+                                System.out.println(roomName + " with count " + count);
                             }
                         }
-
                     }
                 }
 
             } catch (IOException e) {
-                System.out.println("Exception occurred when reading message.");
-                e.printStackTrace();
+                System.out.println();
+                System.out.println("Error occurred when retrieving message from the server.");
+                System.out.println("You have been disconnected from the server.");
+                //e.printStackTrace();
                 try {
                     socket.close();
+                    System.exit(0);
                 } catch (IOException ex) {
                     System.out.println("Exception occurred when closing socket.");
                     ex.printStackTrace();

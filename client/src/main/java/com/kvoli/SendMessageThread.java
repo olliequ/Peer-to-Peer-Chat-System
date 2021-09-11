@@ -87,6 +87,8 @@ public class SendMessageThread extends Thread {
                 listMsg = listMsg.stripLeading();
                 ClientPackets.List listRoom = new ClientPackets.List();
 
+                this.client.setListCommandStatus(true);                 // Store variable that we made a list command
+
                 try {
                     String msg = objectMapper.writeValueAsString(listRoom);
                     writer.println(msg);
@@ -119,7 +121,7 @@ public class SendMessageThread extends Thread {
 
             // Client command: #who
             // Server to return: roomcontents
-            else if (text.contains("who")) {
+            else if (text.contains("#who")) {
                 String createWhoMsg = text.replaceAll("#who", "");
                 createWhoMsg = createWhoMsg.stripLeading();
 
@@ -158,6 +160,7 @@ public class SendMessageThread extends Thread {
                 ClientPackets.Delete deleteMsg = new ClientPackets.Delete(delete);
 
                 this.client.setRoomToDelete(delete);
+                this.client.setDeleteStatus(true);
                 //System.out.println("The room to delete is " + roomToDelete);
 
                 try {

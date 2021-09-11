@@ -25,6 +25,8 @@ public class Client {
   protected String roomToDelete = "";
   protected boolean clientToQuit = false;
   protected boolean clientToCreateRoom = false;
+  protected boolean clientListCmdStatus = false;
+  protected boolean clientWantsToDelete = false;
 
 
   public Client(String serverAddress, int serverPort) {
@@ -121,10 +123,25 @@ public class Client {
     this.clientToCreateRoom = toCreate;
   }
 
+  protected boolean getListCommandStatus() {
+    return this.clientListCmdStatus;
+  }
+  protected void setListCommandStatus(boolean status) {
+    this.clientListCmdStatus = status;
+  }
+
+  protected boolean getDeleteStatus() {
+    return this.clientWantsToDelete;
+  }
+  protected void setDeleteStatus(boolean status) {
+    this.clientWantsToDelete = status;
+  }
+
 
   protected void close() {
     try {
       socket.close();
+      System.exit(0);
     } catch (IOException e) {
       e.printStackTrace();
     }
