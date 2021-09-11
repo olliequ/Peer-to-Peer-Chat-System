@@ -96,7 +96,7 @@ public class SendMessageThread extends Thread {
             }
 
             else if (text.contains("#createroom")) {
-                String createRoomMsg = text.replaceAll("#createroom", ""); // These 2 lines not needed as listMsg isn't an argument?
+                String createRoomMsg = text.replaceAll("#createroom", "");
                 createRoomMsg = createRoomMsg.stripLeading();
                 this.client.setClientToCreateRoom(true);
                 ClientPackets.CreateRoom createRoom = new ClientPackets.CreateRoom(createRoomMsg);
@@ -105,14 +105,30 @@ public class SendMessageThread extends Thread {
                     //System.out.println(msg);
                     writer.println(msg);
                     writer.flush();
-                    this.client.setRoomToCreate(createRoomMsg);
+                    this.client.setRoomToCreate(createRoomMsg);                 // Update client variable.
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            // Client command: #who
+            // Server to return: roomcontents
+            else if (text.contains("who")) {
+                String createWhoMsg = text.replaceAll("#who", "");
+                createWhoMsg = createWhoMsg.stripLeading();
+
+                ClientPackets.Who who = new ClientPackets.Who(createWhoMsg);
+                try {
+                    String msg = objectMapper.writeValueAsString(who);
+                    writer.println(msg);
+                    writer.flush();
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                 }
             }
 
 
-            // Client command QUIT
+            // Client command: #quit
             else if (text.contains("#quit")) {
                 String quit = text.replaceAll("#quit", "");
                 quit = quit.stripLeading();

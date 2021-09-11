@@ -496,6 +496,11 @@ public class Server {
               getRoomList(this, false, null);
             }
 
+            else if (type.equals("who")) {
+              String whoRoom = jsonNode.get("roomid").asText();
+              System.out.println(whoRoom);
+            }
+
             else if (type.equals("createroom")) {
               String newRoomID = jsonNode.get("roomid").asText();
               createNewRoom(this, newRoomID);
@@ -504,7 +509,6 @@ public class Server {
             else if (type.equals("delete")) {
               String roomToDelete = jsonNode.get("roomid").asText();
               deleteRoom(this, roomToDelete);
-
             }
 
             else if (type.equals("quit")) {
@@ -523,7 +527,7 @@ public class Server {
 
       if (gracefulDisconnection == false) {
         // If client didn't disconnect via #quit then force close the connection.
-        close();                                        // Close connections of those that left
+        close();
       }
     }
 
