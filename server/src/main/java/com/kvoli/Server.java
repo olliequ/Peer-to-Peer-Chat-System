@@ -250,7 +250,10 @@ public class Server {
     if (newRoomIsValid && oldRoom.equals("")) {
       JSONWriter jsonBuild = new JSONWriter();
       String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, oldRoom, newRoom);
-      conn.sendMessage(serverMessage + "\n");
+      broadcastRoom(serverMessage, "MainHall", null, conn.identity, true);
+
+
+      //conn.sendMessage(serverMessage + "\n");
     }
 
     // Logic to remove an existing client from their old room.
