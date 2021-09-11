@@ -1,4 +1,4 @@
-# Current functionality
+# Current functionality (outdated)
 - Clients are allocated a room. Rooms are created by appending Room objects (Room.java) into the currentRooms arraylist in Server.java)
 - Client send messages as JSON.
 - Server responds with messages as JSON.
@@ -8,15 +8,13 @@
 
 ## TODO: Client protocols (see ClientPackets in base)
 -  who               
--  delete            <- 99% done. Has one *visual* bug that I need to fix but actual functionality is 100% working.
--  quit              <- half done.
 
 ## TODO: Server protocols (see ServerPackets in base)
 - roomcontents
 
 ## TODO: Other
 - Get command line input as per spec.
-- 
+- Figure out JAR creation!
 
 # Challenge 05
 
