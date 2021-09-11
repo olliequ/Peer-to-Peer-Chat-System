@@ -8,15 +8,13 @@
 
 ## TODO: Client protocols (see ClientPackets in base)
 -  who               
--  delete            <- 99% done. Has one *visual* bug that I need to fix but actual functionality is 100% working.
--  quit              <- half done.
 
 ## TODO: Server protocols (see ServerPackets in base)
 - roomcontents
 
 ## TODO: Other
 - Get command line input as per spec.
-- 
+- Figure out JAR creation!
 
 # Challenge 05
 
