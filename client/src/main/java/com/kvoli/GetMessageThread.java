@@ -89,9 +89,6 @@ public class GetMessageThread extends Thread {
                             this.client.setIdentity(newIdentity);
                             System.out.println(former + " is now " + newIdentity);
                         }
-//                        else {
-//                            System.out.println(former + " is now " + newIdentity);
-//                        }
                     }
 
                     // Received ROOMCHANGE from server
@@ -136,7 +133,7 @@ public class GetMessageThread extends Thread {
                         // For when a client sends #delete. Track if they were successful in deleting their room.
                         boolean deleteDesiredRoom = false;
 
-                        System.out.println(jsonNode.get("rooms"));
+                        //System.out.println(jsonNode.get("rooms"));
 
                         // Logic for CreateRoom where room already exists.
                         // Iterate through list. If our desired room is not present then the room already exists.
@@ -146,13 +143,13 @@ public class GetMessageThread extends Thread {
 
                             // Check if current room doesn't contain the room we want to create
                             if (!currentRoom.contains(this.client.getRoomToCreate())) {
-                                System.out.println(currentRoom + "doesn't contain " + this.client.getRoomToCreate());
+                                //System.out.println(currentRoom + "doesn't contain " + this.client.getRoomToCreate());
                                 alreadyExistsOrInvalid = true;
                             }
                             // If it does contain the room we want to create then room creation was successful
                             else if (currentRoom.contains(this.client.getRoomToCreate())) {
-                                System.out.println(currentRoom);
-                                System.out.println("List contains the room ");
+                                //System.out.println(currentRoom);
+                               // System.out.println("List contains the room ");
                                 roomInList = true;
                                 alreadyExistsOrInvalid = false;
                             }
