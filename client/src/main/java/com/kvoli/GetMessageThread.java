@@ -132,6 +132,7 @@ public class GetMessageThread extends Thread {
                         boolean roomInList = false;
                         // For when a client sends #delete. Track if they were successful in deleting their room.
                         boolean deleteDesiredRoom = false;
+                        boolean displayList = true;
 
                         //System.out.println(jsonNode.get("rooms"));
 
@@ -139,17 +140,19 @@ public class GetMessageThread extends Thread {
                         // Iterate through list. If our desired room is not present then the room already exists.
                         for (JsonNode node : jsonNode.get("rooms")) {
                             String currentRoom = node.asText();
-                            currentRoom = currentRoom.strip();
+                            JsonNode jsonNode1 =  objectMapper.readTree(String.valueOf(currentRoom));
+                            String name = jsonNode1.get("roomid").asText();
+                            String count = jsonNode1.get("count").asText();
+                            System.out.println("Room " + name + " with count " + count);
+
+                            //System.out.println(currentRoom);
 
                             // Check if current room doesn't contain the room we want to create
                             if (!currentRoom.contains(this.client.getRoomToCreate())) {
-                                //System.out.println(currentRoom + "doesn't contain " + this.client.getRoomToCreate());
                                 alreadyExistsOrInvalid = true;
                             }
                             // If it does contain the room we want to create then room creation was successful
                             else if (currentRoom.contains(this.client.getRoomToCreate())) {
-                                //System.out.println(currentRoom);
-                               // System.out.println("List contains the room ");
                                 roomInList = true;
                                 alreadyExistsOrInvalid = false;
                             }
@@ -162,11 +165,14 @@ public class GetMessageThread extends Thread {
                         }
                         if (alreadyExistsOrInvalid && roomInList == false) {
                             System.out.println("Room " + this.client.getRoomToCreate() + " is invalid or already in use.");
+                            this.client.setRoomToCreate("");
+                            displayList = false;
                         }
 
                         else if ((!alreadyExistsOrInvalid) && (roomInList == true) && (deleteDesiredRoom == false)){
                             // If our desired room was present in the received list then room creation was successful.
                             // We also need to reset the clients RoomToCreate string to empty.
+                            // We have this additional condition to capture edge cases.
                             if (client.getClientToCreateRoom() == true) {
                                 System.out.println("Room " + this.client.getRoomToCreate() + " created.");
                                 this.client.setRoomToCreate("");
@@ -177,7 +183,20 @@ public class GetMessageThread extends Thread {
                         else if ((!alreadyExistsOrInvalid) && (deleteDesiredRoom == true)) {
                             System.out.println("Room " + this.client.roomToDelete + " was deleted.");
                             this.client.setRoomToDelete("");                // Reset
+                            displayList = false;
                         }
+
+                        // Now display the list of rooms....
+                        if (displayList) {
+                            for (JsonNode node : jsonNode.get("rooms")) {
+                                String currentRoom = node.asText();
+
+
+
+
+                            }
+                        }
+
                     }
                 }
 
