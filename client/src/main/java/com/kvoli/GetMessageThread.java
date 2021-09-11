@@ -133,13 +133,16 @@ public class GetMessageThread extends Thread {
                         // For when a client sends #delete. Track if they were successful in deleting their room.
                         boolean deleteDesiredRoom = false;
 
-                        //System.out.println(jsonNode.get("rooms"));
-
                         // Logic for CreateRoom where room already exists.
                         // Iterate through list. If our desired room is not present then the room already exists.
                         for (JsonNode node : jsonNode.get("rooms")) {
                             String currentRoom = node.asText();
                             currentRoom = currentRoom.strip();
+                            // System.out.println(currentRoom);
+                            JsonNode jsonNode1 = objectMapper.readTree(String.valueOf(currentRoom));
+                            String RoomID = jsonNode1.get("roomid").asText();
+                            String Count = jsonNode1.get("count").asText();
+                            System.out.println("Room: "+RoomID+", Count: "+Count);
 
                             // Check if current room doesn't contain the room we want to create
                             if (!currentRoom.contains(this.client.getRoomToCreate())) {

@@ -81,7 +81,7 @@ public class ServerPackets {
 
     @JsonTypeName("roominfo")
     public static class RoomInfo {
-        public String type = "roomlist";
+        // public String type = "roomlist";
         public String roomid;
         public int count;
 

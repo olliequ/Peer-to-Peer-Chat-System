@@ -294,6 +294,7 @@ public class Server {
       for (Room r: currentRooms) {
         JSONWriter jsonBuild = new JSONWriter();
         String serverMessage = jsonBuild.buildJsonRoomInfo(r.getRoomName(), r.getRoomSize());
+        System.out.println(serverMessage);
         roomContents.add(serverMessage);
       }
 

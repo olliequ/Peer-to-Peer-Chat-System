@@ -26,7 +26,7 @@ repositories {
 }
 
 application {
-    mainClass = 'com.kvoli.Client'
+    mainClass = 'com.kvoli.ClientMain'
 }
 
 test {
