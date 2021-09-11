@@ -6,15 +6,15 @@
 - Server can act appropriately to identitychange request.
 - Client can #join room. Client can call #list. Client can #quit. 
 
-## TODO: Client protocols (see ClientPackets in base)
--  who               
+
+## TODO: Client protocols (see ClientPackets in base)           
 
 ## TODO: Server protocols (see ServerPackets in base)
-- roomcontents
+
 
 ## TODO: Other
 - Get command line input as per spec.
-- Figure out JAR creation!
+
 
 # Challenge 05
 
