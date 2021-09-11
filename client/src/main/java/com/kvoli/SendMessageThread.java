@@ -32,14 +32,13 @@ public class SendMessageThread extends Thread {
     public void run() {
         boolean sendingMessages = true;
 
-
         while (sendingMessages) {
             ObjectMapper objectMapper = new ObjectMapper();
             ParentClientID = this.client.getIdentity();
             String text = "";
 
-                Scanner keyboard = new Scanner(System.in);
-                text = keyboard.nextLine();
+            Scanner keyboard = new Scanner(System.in);
+            text = keyboard.nextLine();
 
 //            if (this.client.getWelcomeStatus() == true) {
 //                System.out.print(ParentClientID + ": ");

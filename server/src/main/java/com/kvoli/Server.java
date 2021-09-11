@@ -11,7 +11,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class Server {
   private boolean acceptConnections = false;
   public static final int PORT = 4444;        // changed from 6379 to 4444

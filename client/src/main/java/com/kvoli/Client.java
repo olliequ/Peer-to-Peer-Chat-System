@@ -18,14 +18,12 @@ public class Client {
   public static final String ANSI_GREEN = "\u001B[32m";
   public static final String ANSI_RESET = "\u001B[0m";
 
-
   protected String RequestedIdentity = "";
   protected boolean gotWelcome = false;
   protected String roomToCreate = "";
   protected String roomToDelete = "";
   protected boolean clientToQuit = false;
   protected boolean clientToCreateRoom = false;
-
 
   public Client(String serverAddress, int serverPort) {
     this.serverAddress = serverAddress;
@@ -120,7 +118,6 @@ public class Client {
   protected void setClientToCreateRoom(boolean toCreate) {
     this.clientToCreateRoom = toCreate;
   }
-
 
   protected void close() {
     try {
