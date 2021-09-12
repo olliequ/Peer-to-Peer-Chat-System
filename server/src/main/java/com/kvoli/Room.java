@@ -24,8 +24,6 @@ public class Room {
         this.roomOwner = roomOwner;
     }
 
-
-
     // Methods
     protected void addUser (String clientID) {
         roomContents.add(clientID);

@@ -18,6 +18,7 @@ public class GetMessageThread extends Thread {
     private BufferedReader reader;
     private Socket socket;
     private String clientID;
+    public static final String ANSI_RED = "\u001B[31m";
     public static final String ANSI_YELLOW = "\u001B[33m";
     public static final String ANSI_RESET = "\u001B[0m";
 
@@ -104,11 +105,12 @@ public class GetMessageThread extends Thread {
                         if (former.equals(roomid)) {
                             System.out.println("The requested room is invalid or non existent.");
                         }
-                        else if (roomid.equals("") && (this.client.getClientToQuit() == false)) {
-                            System.out.println(identity + " has left the server.");
+                        else if (roomid.equals("") && !this.client.getClientToQuit()) {
+                            System.out.println(identity + " leaves "+this.client.getCurrentRoom()+".");
                         }
-                        else if (roomid.equals("") && (this.client.getClientToQuit() == true)) {
-                            System.out.println("You have been disconnected from the server.");
+                        else if (roomid.equals("") && this.client.getClientToQuit()) {
+                            System.out.println(identity + " leaves "+this.client.getCurrentRoom()+".");
+                            // System.out.println("You have been successfully disconnected from the server.");
                             gettingMessages = false;
                             this.client.close();
                         }
@@ -122,7 +124,7 @@ public class GetMessageThread extends Thread {
                             validChange = true;
                         }
 
-                        if (identity.equals(this.client.getIdentity()) && validChange == true) {
+                        if (identity.equals(this.client.getIdentity()) && validChange) {
                             this.client.setCurrentRoom(roomid);
                         }
                     }
@@ -145,92 +147,96 @@ public class GetMessageThread extends Thread {
                         System.out.println();
                     }
 
-                    // TODO: NOT PROPER
-                    // Received ROOMLIST from server
+                    // Received ROOMLIST from server: Will happen for #list, #createroom, and #deleteroom.
                     else if (type.equals("roomlist")) {
-                        boolean alreadyExistsOrInvalid = false;
-                        boolean roomInList = false;
-                        // For when a client sends #delete. Track if they were successful in deleting their room.
+                        boolean alreadyExistsOrInvalid = false; // Remember, if it doesn't exist yet, but it has an invalid proposed name, we can't add it.
+                        boolean roomInList = false;             // Will turn true if our iteration shows it is present -- i.e. successful creation.
+                        // The 2 below variables are for when a client commands #delete. Track if they were successful in deleting their room.
                         boolean deleteDesiredRoom = false;
                         boolean displayList = true;
 
+                        /**
+                         * As noted above, we're going to receive a #roomlist command from the server for 3 different commands we issue:
+                         * #list, #createroom, and #deleteroom. That's why this 'else-if' block is big.
+                         * If we initially issued a #list command, then this.client.getListCommandStatus() will equal true.
+                         * If we initially issued a #delete command, then this.client.getDeleteCommandStatus() will equal true.
+                         * If we initially issued a #createroom command, then they will both be false. This is how below we identify which
+                         * command we sent out, even though the server always send a roomlist JSON back to us.
+                         */
 
-                        //System.out.println(this.client.getListCommandStatus());
-
-
-                        // Logic for CreateRoom where room already exists.
-                        // Iterate through list. If our desired room is not present then the room already exists.
-
+                        // Iterate through list of rooms we received from server JSON. If our desired room to create is not
+                        // present, then the room already exists.
                         for (JsonNode node : jsonNode.get("rooms")) {
-                            String currentRoom = node.asText();
-
-                            JsonNode jsonNode1 =  objectMapper.readTree(String.valueOf(currentRoom));
-                            String roomName = jsonNode1.get("roomid").asText();
-                            String count = jsonNode1.get("count").asText();
-
+                            // 'node' is the messy version of one item (room) in the received 'rooms' array.
+                            String currentRoom = node.asText(); // Cleaned up version.
+                            JsonNode jsonNode1 =  objectMapper.readTree(currentRoom);
+                            String roomName = jsonNode1.get("roomid").asText(); // The clean, room-name.
+                            String count = jsonNode1.get("count").asText();     // Clean room-count figure.
 
                             // Check if current room doesn't contain the room we want to create
                             if (!roomName.equals(this.client.getRoomToCreate())) {
                                 alreadyExistsOrInvalid = true;
                             }
-                            // If it does contain the room we want to create then room creation was successful
+                            // If it does contain the room we want to create then room creation was successful. Works because room is always appended at the end.
                             else if (roomName.equals(this.client.getRoomToCreate())) {
                                 roomInList = true;
                                 alreadyExistsOrInvalid = false;
                             }
-                            //if (roomName.equals(this.client.getRoomToDelete()) || ((this.client.getRoomToDelete()).equals(""))) {
-                            // If room not in list then it has been deleted
-                            if (roomName.equals(this.client.getRoomToDelete()) == false) {
+
+                            // For #delete command: If room not in list then it has been deleted.
+                            if (!roomName.equals(this.client.getRoomToDelete())) {
                                 //System.out.println("ROOMNAME " + roomName + " EQUALS " + this.client.getRoomToDelete());
                                 deleteDesiredRoom = true;
                             }
                             else if (roomName.equals(this.client.getRoomToDelete())) {
                                 deleteDesiredRoom = false;
                             }
-                            
-//                            else if ((!roomName.equals(this.client.getRoomToDelete()))) {
-//                                deleteDesiredRoom = true;
-//                            }
                         }
-//                        System.out.println("ALREADYEXISTS/INVALID = " + alreadyExistsOrInvalid);
-//                        System.out.println("IN LIST = " + roomInList);
-//                        System.out.println("DELETE DESIRED = " + deleteDesiredRoom);
 
-
-                        if (alreadyExistsOrInvalid && roomInList == false && this.client.getListCommandStatus() == false && this.client.getDeleteStatus() == false) {
+                        /**
+                         * If the room already existed, it's not in the received list, and we're not dealing with a #list or #delete command.
+                         * Basically dealing with the case when we've received a JSON indicating the requested room to create already exists.
+                         * Remember, if it already exists, we contain a room list JSON that doesn't contain it, lol.
+                         */
+                        if (alreadyExistsOrInvalid && !roomInList && !this.client.getListCommandStatus() && !this.client.getDeleteStatus()) {
                             System.out.println("Room " + this.client.getRoomToCreate() + " is invalid or already in use.");
                             this.client.setRoomToCreate("");
                             displayList = false;
                         }
 
-                        else if ((!alreadyExistsOrInvalid) && (roomInList == true) && this.client.getListCommandStatus() == false && this.client.getDeleteStatus() == false){
-                            // If our desired room was present in the received list then room creation was successful.
-                            // We also need to reset the clients RoomToCreate string to empty.
-                            // We have this additional condition to capture edge cases.
-                            if (client.getClientToCreateRoom() == true) {
+                        /**
+                         * If the room didn't already exist, it's in the current list, and we're not dealing with a #list or #delete command.
+                         * Basically dealing with the case when we've received a JSON indicating the requested room creation is successful.
+                         * If our desired room was present in the received list then room creation was successful.
+                         * We also need to reset the clients RoomToCreate string to empty.
+                         * We have this additional condition to capture edge cases.
+                         */
+                        else if (!alreadyExistsOrInvalid && roomInList && !this.client.getListCommandStatus() && !this.client.getDeleteStatus()) {
+                            if (client.getClientToCreateRoom()) {
                                 System.out.println("Room " + this.client.getRoomToCreate() + " created.");
                                 this.client.setRoomToCreate("");
                                 client.setClientToCreateRoom(false);
                             }
-
                         }
-                        else if ((alreadyExistsOrInvalid) && (roomInList == false) && this.client.getListCommandStatus() == false && this.client.getDeleteStatus() == true) {
-                            // If our room to delete wasn't in the list then it was deleted
+
+                        // For if we received the #delete command.
+                        else if (alreadyExistsOrInvalid && !roomInList && !this.client.getListCommandStatus() && this.client.getDeleteStatus()) {
+                            // If our room to delete wasn't in the list, then it was deleted.
                             System.out.println("Room " + this.client.roomToDelete + " was deleted.");
-                            this.client.setRoomToDelete("");                // Reset
-                            this.client.setDeleteStatus(false);
-
+                            this.client.setRoomToDelete("");     // Reset this room to delete string, because delete was successful.
+                            this.client.setDeleteStatus(false);  // Requirement to delete something no longer needed as job finished.
                         }
 
-                        // Now display the list of rooms....
-                        if (this.client.getListCommandStatus() == true) {
+                        // If we received issued a #list command. If after deleting a room we want to print all rooms and their members
+                        // then make getListCommandStatus() = true when you issue the delete request.
+                        if (this.client.getListCommandStatus()) {
                             this.client.setListCommandStatus(false);
                             for (JsonNode node : jsonNode.get("rooms")) {
                                 String currentRoom = node.asText();
                                 JsonNode jsonNode1 =  objectMapper.readTree(String.valueOf(currentRoom));
                                 String roomName = jsonNode1.get("roomid").asText();
                                 String count = jsonNode1.get("count").asText();
-                                System.out.println(roomName + " with count " + count);
+                                System.out.println(roomName + " currently has " + count + " users inside.");
                             }
                         }
                     }

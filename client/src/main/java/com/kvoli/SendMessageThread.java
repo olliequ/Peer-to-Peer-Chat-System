@@ -36,7 +36,6 @@ public class SendMessageThread extends Thread {
             ObjectMapper objectMapper = new ObjectMapper();
             ParentClientID = this.client.getIdentity();
             String text = "";
-
             Scanner keyboard = new Scanner(System.in);
             text = keyboard.nextLine();
 
@@ -46,7 +45,8 @@ public class SendMessageThread extends Thread {
 //                text = keyboard.nextLine();
 //            }
 
-            // First parse the client input. Are they issuing a server command?
+            // First we parse the client scanner input. Are they issuing a server command?
+
             // Client command IDENTITYCHANGE
             if (text.contains("#identitychange")) {
                 // Remove the command and then wrap the new identity into a JSON.
@@ -72,7 +72,6 @@ public class SendMessageThread extends Thread {
                 ClientPackets.Join joinRoom = new ClientPackets.Join(newRoomMsg);
                 try {
                     String msg = objectMapper.writeValueAsString(joinRoom); // Make a JSON object called `msg`.
-                    System.out.println(msg);
                     writer.println(msg);
                     writer.flush();
                 } catch (JsonProcessingException e) {
@@ -104,7 +103,6 @@ public class SendMessageThread extends Thread {
                 ClientPackets.CreateRoom createRoom = new ClientPackets.CreateRoom(createRoomMsg);
                 try {
                     String msg = objectMapper.writeValueAsString(createRoom);
-                    //System.out.println(msg);
                     writer.println(msg);
                     writer.flush();
                     if (createRoomMsg.equals("")) {
@@ -118,12 +116,10 @@ public class SendMessageThread extends Thread {
                 }
             }
 
-            // Client command: #who
-            // Server to return: roomcontents
+            // Client command: #who. The server returns a roomcontents JSON.
             else if (text.contains("#who")) {
                 String createWhoMsg = text.replaceAll("#who", "");
                 createWhoMsg = createWhoMsg.stripLeading();
-
                 ClientPackets.Who who = new ClientPackets.Who(createWhoMsg);
                 try {
                     String msg = objectMapper.writeValueAsString(who);
@@ -133,7 +129,6 @@ public class SendMessageThread extends Thread {
                     e.printStackTrace();
                 }
             }
-
 
             // Client command: #quit
             else if (text.contains("#quit")) {

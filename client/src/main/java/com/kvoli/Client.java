@@ -61,6 +61,7 @@ public class Client {
   public String getIdentity() {
       return this.Identity;
   }
+
   public void setIdentity(String identity) {
     this.Identity = identity;
   }
@@ -121,7 +122,6 @@ public class Client {
     this.clientToCreateRoom = toCreate;
   }
 
-
   protected boolean getListCommandStatus() {
     return this.clientListCmdStatus;
   }
@@ -139,6 +139,7 @@ public class Client {
 
   protected void close() {
     try {
+      System.out.println("Disconnected from "+socket.getInetAddress());
       socket.close();
       System.exit(0);
     } catch (IOException e) {
