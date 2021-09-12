@@ -136,6 +136,7 @@ public class GetMessageThread extends Thread {
 
                         // Logic for CreateRoom where room already exists.
                         // Iterate through list. If our desired room is not present then the room already exists.
+
                         for (JsonNode node : jsonNode.get("rooms")) {
                             String currentRoom = node.asText();
 
