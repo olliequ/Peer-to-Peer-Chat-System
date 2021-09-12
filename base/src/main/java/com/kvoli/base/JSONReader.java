@@ -21,5 +21,4 @@ public class JSONReader {
         }
         return content;
     }
-
 }

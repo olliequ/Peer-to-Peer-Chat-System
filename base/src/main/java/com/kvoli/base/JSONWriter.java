@@ -36,7 +36,6 @@ public class JSONWriter {
         return serverMessage;
     }
 
-
     // Used for the "IdentityChange" protocol.
     public String buildJSONNewID(String formerID, String newID) {
         String serverMessage = null;
@@ -56,7 +55,6 @@ public class JSONWriter {
         }
         return serverMessage;
     }
-
 
     // Used for the "JoinRoom" protocol
     public String buildJSONJoinRoom(String identity, String formerRoom, String roomID) {
@@ -78,7 +76,6 @@ public class JSONWriter {
         return serverMessage;
     }
 
-
     // Build json string for the current room
     public String buildJsonRoomInfo(String roomid, int count){
         String serverMessage = null;
@@ -98,7 +95,6 @@ public class JSONWriter {
         return serverMessage;
 
     }
-
 
     public String buildJsonRoomList(List<String> rooms) {
         String serverMessage = null;
@@ -122,7 +118,6 @@ public class JSONWriter {
         return serverMessage;
     }
 
-
     public String buildJsonRoomContents(String roomid, List<String> identities, String owner) {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
@@ -138,8 +133,4 @@ public class JSONWriter {
         }
         return serverMessage;
     }
-
-
-
-
 }

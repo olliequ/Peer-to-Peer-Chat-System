@@ -46,11 +46,6 @@ public class GetMessageThread extends Thread {
 
                     // Received MESSAGE from server
                     if (type.equals("message")) {
-//                        String content = jsonNode.get("content").asText();
-//                        String identity = jsonNode.get("identity").asText();
-//                        System.out.println(identity + ": " + content);
-//                        this.client.setWelcomeStatus(true);
-
                         String content = jsonNode.get("content").asText();
                         String IncomingIdentity = jsonNode.get("identity").asText();
 
@@ -65,10 +60,10 @@ public class GetMessageThread extends Thread {
                         else {
                             String currentRoom = this.client.getCurrentRoom();
                             if (this.client.getIdentity().equals(IncomingIdentity)) {
-                                System.out.println("["+ currentRoom + "] " + IncomingIdentity + "> " + content);
+                                System.out.println("["+ currentRoom + "] " + IncomingIdentity + ": " + content);
                             }
                             else {
-                                System.out.println("["+ currentRoom + "] " + IncomingIdentity + ": " + content);
+                                System.out.println(IncomingIdentity + ": " + content);
                             }
                         }
                     }

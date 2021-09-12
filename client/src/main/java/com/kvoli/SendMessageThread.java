@@ -39,12 +39,6 @@ public class SendMessageThread extends Thread {
             Scanner keyboard = new Scanner(System.in);
             text = keyboard.nextLine();
 
-//            if (this.client.getWelcomeStatus() == true) {
-//                System.out.print(ParentClientID + ": ");
-//                Scanner keyboard = new Scanner(System.in);
-//                text = keyboard.nextLine();
-//            }
-
             // First we parse the client scanner input. Are they issuing a server command?
 
             // Client command IDENTITYCHANGE
@@ -84,7 +78,6 @@ public class SendMessageThread extends Thread {
                 String listMsg = text.replaceAll("#list", ""); // These 2 lines not needed as listMsg isn't an argument?
                 listMsg = listMsg.stripLeading();
                 ClientPackets.List listRoom = new ClientPackets.List();
-
                 this.client.setListCommandStatus(true);                 // Store variable that we made a list command
 
                 try {
@@ -135,7 +128,6 @@ public class SendMessageThread extends Thread {
                 String quit = text.replaceAll("#quit", "");
                 quit = quit.stripLeading();
                 this.client.setClientToQuit(true);                  // Tell getMessageThread that we want to leave.
-
                 ClientPackets.Quit quitMsg = new ClientPackets.Quit();
 
                 try {
@@ -146,7 +138,6 @@ public class SendMessageThread extends Thread {
                     e.printStackTrace();
                 }
             }
-
 
             else if (text.contains("#delete")) {
                 String delete = text.replaceAll("#delete", "");
@@ -166,7 +157,6 @@ public class SendMessageThread extends Thread {
                 }
             }
 
-
             // Else they aren't issuing a command. Assume it's a standard message.
             else {
                 if (!text.equals("")) {
@@ -174,7 +164,6 @@ public class SendMessageThread extends Thread {
                     ClientPackets.Message message = new ClientPackets.Message(text);
                     try {
                         String x = objectMapper.writeValueAsString(message);
-                        //System.out.println(x);
                         writer.println(x);      // Send `x` to the writer, and flush to actually send over the network.
                         writer.flush();         // Why doesn't flushing this to the server not also make appear on own screen -- as it's still going to serverInputStream!
 
@@ -187,9 +176,5 @@ public class SendMessageThread extends Thread {
                 }
             }
         }
-
-
     }
-
-
 }

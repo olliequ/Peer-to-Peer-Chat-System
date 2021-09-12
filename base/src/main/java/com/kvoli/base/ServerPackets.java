@@ -50,7 +50,6 @@ public class ServerPackets {
         }
     }
 
-
     @JsonTypeName("roomchange")
     public static class RoomChange {
         public String type = "roomchange";
@@ -92,7 +91,6 @@ public class ServerPackets {
         }
     }
 
-
     @JsonTypeName("roomcontents")
     public static class RoomContents {
         public String type = "roomcontents";
@@ -105,6 +103,5 @@ public class ServerPackets {
             this.identities = identities;
             this.owner = owner;
         }
-
     }
 }

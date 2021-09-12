@@ -35,7 +35,7 @@ public class Server {
       // We want to bind serverSocket to a port. That port should accept connections within an infinite loop.
       serverSocket = new ServerSocket(PORT);
       System.out.printf("Currently listening on port number %d \n", PORT);
-      acceptConnections = true;           // Listen for connections -- whilst server still up and alive.
+      acceptConnections = true;           // Listen for connections -- whilst the server is up and alive.
 
       while (acceptConnections) {
         // Accepted a connection. Move them to the main hall room.
@@ -79,9 +79,7 @@ public class Server {
     String welcomeClient = "---> Welcome! You are connected as: "+ANSI_CYAN+clientIdentity+ANSI_RESET+"\n---> Here's a rundown on the currently active rooms:";
     String FromServerOrNot = "Yes"; // Make this a boolean instead?
     JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
-
     String serverMessage = jsonBuild.buildJSON(welcomeClient, "Server"); // Calls method that builds the JSON String.
-
     System.out.format("%n"+ANSI_BLUE+"Sending "+"JSON string(s). Check below:%n"+ANSI_RESET);
     System.out.format("Welcome JSON String: %s%n", serverMessage);
     conn.sendMessage(serverMessage + ". \n");
@@ -202,7 +200,6 @@ public class Server {
     }
   }
 
-
   // Method to allow a client to join a room.
   private synchronized void joinRoom(ServerConnection conn, String oldRoom, String newRoom) {
     // First check if the new 'room' is even valid.
@@ -246,8 +243,6 @@ public class Server {
       conn.sendMessage(newRoomContents + "\n");
       // Thus the client who moves to a new room gets sent 2 JSON strings -- 1 is the message that he has moved rooms
       // (everyone else in new room also gets this string), and 2 is the current contents of the new room.
-      // TODO: If client changing to MainHall, server to send RoomContents msg to client (for MainHall) and
-      // TODO: ...RoomList message after the RoomChange message. Are these TODOS done? It seems they are.
     }
 
     else {
@@ -298,7 +293,7 @@ public class Server {
   }
 
   private synchronized String getRoomContents(ServerConnection conn, String roomid) {
-    // Navigate to the current room and retrieve room occupants
+    // Navigate to the current room and retrieve room occupants.
     List<String> roomContents = new ArrayList<String>();
     String roomOwner = null;
 
@@ -308,19 +303,6 @@ public class Server {
         roomOwner = r.getRoomOwner();
       }
     }
-
-    // Append a star next to the room owners name to denote them as owner.
-    // Edit: perhaps this is better suited for the client.
-//    int index = 0;
-//    for (String person: roomContents) {
-//      if (person.equals(roomOwner)) {
-//        roomContents.set(index, person + "*");
-//        break;
-//      }
-//      else {
-//        index += 1;
-//      }
-//    }
 
     // Wrap this array into a RoomContents JSON
     JSONWriter jsonBuild = new JSONWriter();
@@ -523,7 +505,7 @@ public class Server {
               // If it doesn't, send an error message.
               else {
                 String whoErrorMessage = "The room you're inquiring about ("+whoRoom+") doesn't exist. Try again.";
-                String serverMessageJSON = jsonBuild.buildJSON(whoErrorMessage, identity);
+                String serverMessageJSON = jsonBuild.buildJSON(whoErrorMessage, "Server");
                 System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
                 System.out.println("WrongWho JSON: " + serverMessageJSON);
                 this.sendMessage(serverMessageJSON + "\n");
