@@ -9,6 +9,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class Server {
@@ -249,10 +250,9 @@ public class Server {
     if (newRoomIsValid && oldRoom.equals("")) {
       JSONWriter jsonBuild = new JSONWriter();
       String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, oldRoom, newRoom);
+      String newRoomContents = getRoomContents(conn, newRoom);
       broadcastRoom(serverMessage, "MainHall", null, conn.identity, true);
-
-
-      //conn.sendMessage(serverMessage + "\n");
+      conn.sendMessage(newRoomContents + "\n");
     }
 
     // Logic to remove an existing client from their old room.
@@ -273,6 +273,8 @@ public class Server {
       }
       // TODO: If client changing to MainHall, server to send RoomContents msg to client (for MainHall) and
       // TODO: ...RoomList message after the RoomChange message.
+      String newRoomContents = getRoomContents(conn, newRoom);
+      conn.sendMessage(newRoomContents + "\n");
     }
 
     else {
@@ -324,8 +326,42 @@ public class Server {
       //getRoomList(conn);
       System.out.println("Failed to create new room.");
     }
+  }
 
+  private synchronized String getRoomContents(ServerConnection conn, String roomid) {
+    // Navigate to the current room and retrieve room occupants
+    List<String> roomContents = new ArrayList<String>();
+    String roomOwner = null;
 
+    for (Room r: currentRooms) {
+      if (r.getRoomName().equals(roomid)) {
+        roomContents = r.getRoomContents();
+        roomOwner = r.getRoomOwner();
+      }
+    }
+
+    // Append a star next to the room owners name to denote them as owner.
+    // Edit: perhaps this is better suited for the client.
+//    int index = 0;
+//    for (String person: roomContents) {
+//      if (person.equals(roomOwner)) {
+//        roomContents.set(index, person + "*");
+//        break;
+//      }
+//      else {
+//        index += 1;
+//      }
+//    }
+
+    // Wrap this array into a RoomContents JSON
+    JSONWriter jsonBuild = new JSONWriter();
+    String roomContentsMsg = jsonBuild.buildJsonRoomContents(roomid, roomContents, roomOwner);
+    System.out.println("Room contents message: " + roomContentsMsg);
+
+    // Return to the calling client
+    return roomContentsMsg;
+
+    //System.out.println("The room contents are: " + roomContents);
   }
 
 
@@ -502,7 +538,8 @@ public class Server {
 
             else if (type.equals("who")) {
               String whoRoom = jsonNode.get("roomid").asText();
-              System.out.println(whoRoom);
+              String contents = getRoomContents(this, whoRoom);
+              sendMessage(contents + "\n");
             }
 
             else if (type.equals("createroom")) {
@@ -544,8 +581,26 @@ public class Server {
 
 
       try {
-        // Traverse to the room the client belongs to and remove client from that room
+        // Traverse to the room the client belongs to and remove client from that room.
+        // Also if they are the owner of any room then remove ownership.
+        for (Iterator<Room> it = currentRooms.iterator(); it.hasNext(); ) {
+          Room r = it.next();
+          //System.out.println("ITERATING...");
+          if (identity.equals(r.getRoomOwner())) {
+            r.setRoomOwner("");
+          }
+          // While we're here, if the room has no owner AND no contents then delete it.
+          if (r.getRoomOwner().equals("") && (r.getRoomContents().size() == 0)) {
+            System.out.println("Server to delete room: " + r.getRoomName());
+            //int index = getRoomIndex(r.getRoomName());
+            it.remove();
+          }
+        }
+
+        currentRooms.get(getRoomIndex(roomID)).setRoomOwner("");
         currentRooms.get(getRoomIndex(roomID)).removeUser(identity);
+
+        //
         disconnect(this);
         reader.close();
         writer.close();

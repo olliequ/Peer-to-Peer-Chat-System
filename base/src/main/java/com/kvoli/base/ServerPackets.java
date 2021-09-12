@@ -92,11 +92,19 @@ public class ServerPackets {
         }
     }
 
-    // TODO
+
     @JsonTypeName("roomcontents")
     public static class RoomContents {
+        public String type = "roomcontents";
         public String roomid;
+        public List<String> identities;
         public String owner;
+
+        public RoomContents(String roomid, List<String> identities, String owner) {
+            this.roomid = roomid;
+            this.identities = identities;
+            this.owner = owner;
+        }
 
     }
 }

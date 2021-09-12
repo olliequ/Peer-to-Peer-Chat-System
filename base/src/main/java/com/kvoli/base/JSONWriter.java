@@ -73,7 +73,7 @@ public class JSONWriter {
         }
         catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Error when writing newID message");
+            System.out.println("Error when writing JoinRoom message");
         }
         return serverMessage;
     }
@@ -93,7 +93,7 @@ public class JSONWriter {
         }
         catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Error when writing newID message");
+            System.out.println("Error when writing RoomInfo message");
         }
         return serverMessage;
 
@@ -104,6 +104,7 @@ public class JSONWriter {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
 
+        // TODO: BAD VARIABLE NAME
         ArrayList<ArrayList<String>> test = new ArrayList<ArrayList<String>>();
 
         try{
@@ -116,7 +117,24 @@ public class JSONWriter {
         }
         catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Error when writing newID message");
+            System.out.println("Error when writing RoomList message");
+        }
+        return serverMessage;
+    }
+
+
+    public String buildJsonRoomContents(String roomid, List<String> identities, String owner) {
+        String serverMessage = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            ServerPackets.RoomContents roomContents = new ServerPackets.RoomContents(roomid, identities, owner);
+            serverMessage = objectMapper.writeValueAsString(roomContents);
+            return serverMessage;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error when writing RoomContents message");
         }
         return serverMessage;
     }

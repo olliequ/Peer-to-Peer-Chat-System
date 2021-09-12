@@ -9,7 +9,8 @@ public class Room {
 
     // Instance variables
     private String roomID;
-    private String roomOwner = "null";
+    //private String roomOwner = "null";
+    private String roomOwner = "";                      // changed to empty string. If issues uncomment the above.
     private ArrayList<String> roomContents = new ArrayList<>();
 
     // Constructor 1: Default
