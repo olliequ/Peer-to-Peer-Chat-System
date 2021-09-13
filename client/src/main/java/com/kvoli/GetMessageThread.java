@@ -7,10 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kvoli.base.JSONReader;
 
 
 public class GetMessageThread extends Thread {
@@ -31,23 +30,27 @@ public class GetMessageThread extends Thread {
     @Override
     public void run() {
         boolean gettingMessages = true;
+
         while (gettingMessages) {
             try {
                 String in = reader.readLine();
                 if (in != null) {
                     //System.out.println();
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    JsonNode jsonNode = objectMapper.readTree(in);
+                    JSONReader jRead = new JSONReader();
+                    jRead.readInput(in);
+
+
                     String type = "null";
 
                     try {
-                        type = jsonNode.get("type").asText();
+                        type = jRead.getJSONType();
                         } catch (Exception e) {}
 
                     // Received MESSAGE from server
                     if (type.equals("message")) {
-                        String content = jsonNode.get("content").asText();
-                        String IncomingIdentity = jsonNode.get("identity").asText();
+                        String content = jRead.getJSONContent();
+                        String IncomingIdentity = jRead.getJSONIdentity();
+
 
                         if (this.client.getIdentity().equals("1stEver")) {
                             this.client.setIdentity(IncomingIdentity);
@@ -70,8 +73,8 @@ public class GetMessageThread extends Thread {
 
                     // Received NEWIDENTITY from server
                     else if (type.equals("newidentity")) {
-                        String former = jsonNode.get("former").asText();
-                        String newIdentity = jsonNode.get("identity").asText();
+                        String former = jRead.getJSONFormerIdentity();
+                        String newIdentity = jRead.getJSONIdentity();
 
                         if (former.equals(newIdentity))  {
                             System.out.println("Requested identity invalid or in use.");
@@ -92,9 +95,9 @@ public class GetMessageThread extends Thread {
 
                     // Received ROOMCHANGE from server
                     else if (type.equals("roomchange")) {
-                        String identity = jsonNode.get("identity").asText();
-                        String former = jsonNode.get("former").asText();
-                        String roomid = jsonNode.get("roomid").asText();
+                        String identity = jRead.getJSONIdentity();
+                        String former = jRead.getJSONFormerIdentity();
+                        String roomid = jRead.getJSONRoomId();
                         boolean validChange = false;
 
                         if (former.equals(roomid)) {
@@ -125,13 +128,13 @@ public class GetMessageThread extends Thread {
                     }
 
                     else if (type.equals("roomcontents")) {
-                        String owner =  jsonNode.get("owner").asText();
-                        String roomid = jsonNode.get("roomid").asText();
+                        String owner = jRead.getJSONOwner();
+                        String roomid = jRead.getJSONRoomId();
+                        ArrayList<String> identities = jRead.getJSONIdentities();
 
                         // Iterate over the identities array from RoomContents and print each user to the screen.
                         System.out.print(roomid + " contains: ");
-                        for (JsonNode node: jsonNode.get("identities")) {
-                            String person = node.asText();
+                        for (String person : identities) {
                             if (person.equals(owner)) {
                                 System.out.print(person + "* ");
                             }
@@ -159,14 +162,13 @@ public class GetMessageThread extends Thread {
                          * command we sent out, even though the server always send a roomlist JSON back to us.
                          */
 
+                        ArrayList<String> rooms = jRead.getJSONRooms();
+
                         // Iterate through list of rooms we received from server JSON. If our desired room to create is not
                         // present, then the room already exists.
-                        for (JsonNode node : jsonNode.get("rooms")) {
-                            // 'node' is the messy version of one item (room) in the received 'rooms' array.
-                            String currentRoom = node.asText(); // Cleaned up version.
-                            JsonNode jsonNode1 =  objectMapper.readTree(currentRoom);
-                            String roomName = jsonNode1.get("roomid").asText(); // The clean, room-name.
-                            String count = jsonNode1.get("count").asText();     // Clean room-count figure.
+                        for (String room : rooms) {
+                            String roomName = jRead.getJSONRoomName(room);
+                            String count = jRead.getJSONRoomCount(room);
 
                             // Check if current room doesn't contain the room we want to create
                             if (!roomName.equals(this.client.getRoomToCreate())) {
@@ -191,13 +193,15 @@ public class GetMessageThread extends Thread {
                         /**
                          * If the room already existed, it's not in the received list, and we're not dealing with a #list or #delete command.
                          * Basically dealing with the case when we've received a JSON indicating the requested room to create already exists.
-                         * Remember, if it already exists, we contain a room list JSON that doesn't contain it, lol.
+                         * Remember, if it already exists, we contain a room list JSON that doesn't contain it.
                          */
                         if (alreadyExistsOrInvalid && !roomInList && !this.client.getListCommandStatus() && !this.client.getDeleteStatus()) {
                             System.out.println("Room " + this.client.getRoomToCreate() + " is invalid or already in use.");
                             this.client.setRoomToCreate("");
                             displayList = false;
                         }
+
+
 
                         /**
                          * If the room didn't already exist, it's in the current list, and we're not dealing with a #list or #delete command.
@@ -226,11 +230,9 @@ public class GetMessageThread extends Thread {
                         // then make getListCommandStatus() = true when you issue the delete request.
                         if (this.client.getListCommandStatus()) {
                             this.client.setListCommandStatus(false);
-                            for (JsonNode node : jsonNode.get("rooms")) {
-                                String currentRoom = node.asText();
-                                JsonNode jsonNode1 =  objectMapper.readTree(String.valueOf(currentRoom));
-                                String roomName = jsonNode1.get("roomid").asText();
-                                String count = jsonNode1.get("count").asText();
+                            for (String room : rooms) {
+                                String roomName = jRead.getJSONRoomName(room);
+                                String count = jRead.getJSONRoomCount(room);
                                 System.out.println(roomName + " currently has " + count + " users inside.");
                             }
                         }

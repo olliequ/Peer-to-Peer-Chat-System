@@ -10,13 +10,8 @@ import java.util.List;
 
 
 public class JSONWriter {
+    private ObjectMapper oMapper = new ObjectMapper();
 
-    /**
-     * Called by the server to build a JSON string (Message) with the appropriate values (Identity & Content).
-     * @param clientMsg
-     * @param userID
-     * @return JSON String message
-     */
 
     // Used for the "Message" protocol -- to send simple on-screen messages to clients.
     public String buildJSON (String clientMsg, String userID) {
@@ -37,7 +32,7 @@ public class JSONWriter {
     }
 
     // Used for the "IdentityChange" protocol.
-    public String buildJSONNewID(String formerID, String newID) {
+    public String buildJSONNewID (String formerID, String newID) {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -57,7 +52,7 @@ public class JSONWriter {
     }
 
     // Used for the "JoinRoom" protocol
-    public String buildJSONJoinRoom(String identity, String formerRoom, String roomID) {
+    public String buildJSONJoinRoom (String identity, String formerRoom, String roomID) {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -77,7 +72,7 @@ public class JSONWriter {
     }
 
     // Build json string for the current room
-    public String buildJsonRoomInfo(String roomid, int count){
+    public String buildJsonRoomInfo (String roomid, int count){
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -96,7 +91,7 @@ public class JSONWriter {
 
     }
 
-    public String buildJsonRoomList(List<String> rooms) {
+    public String buildJsonRoomList (List<String> rooms) {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -118,7 +113,7 @@ public class JSONWriter {
         return serverMessage;
     }
 
-    public String buildJsonRoomContents(String roomid, List<String> identities, String owner) {
+    public String buildJsonRoomContents (String roomid, List<String> identities, String owner) {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -133,4 +128,97 @@ public class JSONWriter {
         }
         return serverMessage;
     }
+
+
+    public String buildIdentityChangeMsg (ClientPackets.IdentityChange identityChange) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(identityChange);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter buildIdentityChangeMsg");
+        }
+        return msg;
+    }
+
+    public String buildJoinMsg (ClientPackets.Join join ) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(join);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter buildJoin");
+        }
+        return msg;
+    }
+
+    public String buildListMsg (ClientPackets.List list ) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(list);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter buildList");
+        }
+        return msg;
+    }
+
+    public String buildCreateRoomMsg (ClientPackets.CreateRoom createRoom) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(createRoom);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter createRoom");
+        }
+        return msg;
+    }
+
+    public String buildWhoMsg (ClientPackets.Who who) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(who);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter buildWhoMsg");
+        }
+        return msg;
+    }
+
+    public String buildQuitMsg (ClientPackets.Quit quit) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(quit);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter buildQuitMsg");
+        }
+        return msg;
+    }
+
+    public String buildDeleteMessage (ClientPackets.Delete delete) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(delete);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter buildDeleteMsg");
+        }
+        return msg;
+    }
+
+    public String buildMessage (ClientPackets.Message message) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(message);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter buildMessage");
+        }
+        return msg;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 }

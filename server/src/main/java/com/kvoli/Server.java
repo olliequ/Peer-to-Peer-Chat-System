@@ -1,9 +1,7 @@
 package com.kvoli;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.kvoli.base.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -42,16 +40,13 @@ public class Server {
         Socket socket = serverSocket.accept(); // Generate new socket based off the encompassing ServerSocket -- accept it.
         System.out.println(ANSI_GREEN+"\nAccepted connection from client with port number: " + socket.getPort()+ANSI_RESET); // Port # of client.
 
-        // Perform operations with the socket (client)
-        // Now that the socket is assigned to a room, their messages should only be restricted to that room.
-        // Note: by default, new users are added to the Main Hall (roomID = "MainHall").
+        // Assign name
         guestCount += 1;
         String clientName = "Guest" + guestCount;
-        //currentRooms.get(0).addUser(clientName); // Go to 0 because always land on MainHall.
 
+        // Perform operations with the socket (client)
         // Start a connection which will have its own thread of execution. Then we don't care about it anymore.
         // The connection will be able to handle itself.
-        //ServerConnection currentConnection = new ServerConnection(socket, clientName, "MainHall");
         ServerConnection currentConnection = new ServerConnection(socket, clientName, "");
         currentConnection.start();
         connect(currentConnection);
@@ -404,7 +399,7 @@ public class Server {
         Room r = it.next();
         // While we're here, if the room has no owner AND no contents then delete it.
         if (r.getRoomOwner().equals("") && (r.getRoomContents().size() == 0) && !r.getRoomName().equals("MainHall")) {
-          System.out.println("Server to delete room: " + r.getRoomName());
+          System.out.println("Server to delete room: " + r.getRoomName() + " as it is empty with no owner.");
           it.remove();
         }
       }
@@ -462,9 +457,9 @@ public class Server {
           JSONReader read = new JSONReader();
           msg = read.readMSg(in);
           if (in != null) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(in); // Parse the received string into JSON form.
-            String type = jsonNode.get("type").asText();   // Extract the value from the 'type' key field.
+            JSONReader jRead = new JSONReader();
+            jRead.readInput(in);
+            String type = jRead.getJSONType();   // Extract the value from the 'type' key field.
             System.out.format(ANSI_RED+"%nReceived "+"JSON string of type: %s. It is below:%n"+ANSI_RESET, type);
 
             /**
@@ -480,7 +475,7 @@ public class Server {
             else if (type.equals("identitychange")) {
               System.out.format("Raw IC JSON: %s%n", in);
               String oldIdentity = identity;
-              String newIdentity = jsonNode.get("identity").asText();
+              String newIdentity = jRead.getJSONIdentity();
               boolean isValidIdentity = verifyIdentity(this, newIdentity);
               String newIdentityMessage = changeIdentity(this, newIdentity, isValidIdentity);
               if (isValidIdentity) {
@@ -491,7 +486,7 @@ public class Server {
 
             else if (type.equals("join")) {
               System.out.format("JoinRoom JSON: %s%n", in);
-              String newRoom = jsonNode.get("roomid").asText();
+              String newRoom = jRead.getJSONRoomId();
               System.out.println("Note: User is attempting to join '" + newRoom+"'.");
               String currentRoom = roomID;
               joinRoom(this, currentRoom, newRoom);
@@ -504,7 +499,7 @@ public class Server {
 
             else if (type.equals("who")) {
               System.out.format("Who JSON: %s%n", in);
-              String whoRoom = jsonNode.get("roomid").asText();
+              String whoRoom = jRead.getJSONRoomId();
               boolean roomExists = false;
               // Check that the room they're inquiring about exists.
               for (Room r: currentRooms) {
@@ -531,13 +526,13 @@ public class Server {
 
             else if (type.equals("createroom")) {
               System.out.format("CreateRoom JSON: %s%n", in);
-              String newRoomID = jsonNode.get("roomid").asText();
+              String newRoomID = jRead.getJSONRoomId();
               createNewRoom(this, newRoomID);
             }
 
             else if (type.equals("delete")) {
               System.out.format("DeleteRoom JSON: %s%n", in);
-              String roomToDelete = jsonNode.get("roomid").asText();
+              String roomToDelete = jRead.getJSONRoomId();
               deleteRoom(this, roomToDelete);
             }
 

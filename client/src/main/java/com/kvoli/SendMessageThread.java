@@ -1,11 +1,11 @@
 package com.kvoli;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.fasterxml.jackson.core.JsonProcessingException;
+//import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kvoli.base.Base;
 import com.kvoli.base.ClientPackets;
 import com.kvoli.base.JSONReader;
+import com.kvoli.base.JSONWriter;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,7 +33,8 @@ public class SendMessageThread extends Thread {
         boolean sendingMessages = true;
 
         while (sendingMessages) {
-            ObjectMapper objectMapper = new ObjectMapper();
+            // ObjectMapper objectMapper = new ObjectMapper();
+            JSONWriter jWrite = new JSONWriter();
             ParentClientID = this.client.getIdentity();
             String text = "";
             Scanner keyboard = new Scanner(System.in);
@@ -47,15 +48,12 @@ public class SendMessageThread extends Thread {
                 String identity = text.replaceAll("#identitychange", "");
                 identity = identity.stripLeading(); // Tom
                 this.client.setRequestedIdentity(identity);
+
                 ClientPackets.IdentityChange identityChange = new ClientPackets.IdentityChange(identity);
-                try {
-                    String msg = objectMapper.writeValueAsString(identityChange);
-                    //System.out.format("IC JSON string flushed to Server: %s", msg);
-                    writer.println(msg);
-                    writer.flush();             // Why not printing to all clients? writer is
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
+                String msg = jWrite.buildIdentityChangeMsg(identityChange);
+                writer.println(msg);
+                writer.flush();
+
             }
 
             // Client command JOIN
@@ -64,13 +62,10 @@ public class SendMessageThread extends Thread {
                 newRoomMsg = newRoomMsg.stripLeading();
 
                 ClientPackets.Join joinRoom = new ClientPackets.Join(newRoomMsg);
-                try {
-                    String msg = objectMapper.writeValueAsString(joinRoom); // Make a JSON object called `msg`.
-                    writer.println(msg);
-                    writer.flush();
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
+                String msg = jWrite.buildJoinMsg(joinRoom);
+                writer.println(msg);
+                writer.flush();
+
             }
 
             // Client command LIST
@@ -80,13 +75,10 @@ public class SendMessageThread extends Thread {
                 ClientPackets.List listRoom = new ClientPackets.List();
                 this.client.setListCommandStatus(true);                 // Store variable that we made a list command
 
-                try {
-                    String msg = objectMapper.writeValueAsString(listRoom);
-                    writer.println(msg);
-                    writer.flush();
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
+                String msg = jWrite.buildListMsg(listRoom);
+                writer.println(msg);
+                writer.flush();
+
             }
 
             else if (text.contains("#createroom")) {
@@ -94,18 +86,15 @@ public class SendMessageThread extends Thread {
                 createRoomMsg = createRoomMsg.stripLeading();
                 this.client.setClientToCreateRoom(true);
                 ClientPackets.CreateRoom createRoom = new ClientPackets.CreateRoom(createRoomMsg);
-                try {
-                    String msg = objectMapper.writeValueAsString(createRoom);
-                    writer.println(msg);
-                    writer.flush();
-                    if (createRoomMsg.equals("")) {
-                        this.client.setRoomToCreate("EmptyString");                 // Update client variable.
-                    }
-                    else {
-                        this.client.setRoomToCreate(createRoomMsg);                 // Update client variable.
-                    }
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
+
+                String msg = jWrite.buildCreateRoomMsg(createRoom);
+                writer.println(msg);
+                writer.flush();
+                if (createRoomMsg.equals("")) {
+                    this.client.setRoomToCreate("EmptyString");                 // Update client variable.
+                }
+                else {
+                    this.client.setRoomToCreate(createRoomMsg);                 // Update client variable.
                 }
             }
 
@@ -114,13 +103,10 @@ public class SendMessageThread extends Thread {
                 String createWhoMsg = text.replaceAll("#who", "");
                 createWhoMsg = createWhoMsg.stripLeading();
                 ClientPackets.Who who = new ClientPackets.Who(createWhoMsg);
-                try {
-                    String msg = objectMapper.writeValueAsString(who);
-                    writer.println(msg);
-                    writer.flush();
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
+                String msg = jWrite.buildWhoMsg(who);
+                writer.println(msg);
+                writer.flush();
+
             }
 
             // Client command: #quit
@@ -128,15 +114,12 @@ public class SendMessageThread extends Thread {
                 String quit = text.replaceAll("#quit", "");
                 quit = quit.stripLeading();
                 this.client.setClientToQuit(true);                  // Tell getMessageThread that we want to leave.
-                ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+                ClientPackets.Quit quitMsg = new ClientPackets.Quit();      // No param needed
 
-                try {
-                    String msg = objectMapper.writeValueAsString(quitMsg);
-                    writer.println(msg);
-                    writer.flush();
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
+                String msg = jWrite.buildQuitMsg(quitMsg);
+                writer.println(msg);
+                writer.flush();
+
             }
 
             else if (text.contains("#delete")) {
@@ -148,13 +131,10 @@ public class SendMessageThread extends Thread {
                 this.client.setDeleteStatus(true);
                 //System.out.println("The room to delete is " + roomToDelete);
 
-                try {
-                    String msg = objectMapper.writeValueAsString(deleteMsg);
-                    writer.println(msg);
-                    writer.flush();
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
+                String msg = jWrite.buildDeleteMessage(deleteMsg);
+                writer.println(msg);
+                writer.flush();
+
             }
 
             // Else they aren't issuing a command. Assume it's a standard message.
@@ -162,14 +142,10 @@ public class SendMessageThread extends Thread {
                 if (!text.equals("")) {
                     // Wrap this input into JSON.
                     ClientPackets.Message message = new ClientPackets.Message(text);
-                    try {
-                        String x = objectMapper.writeValueAsString(message);
-                        writer.println(x);      // Send `x` to the writer, and flush to actually send over the network.
-                        writer.flush();         // Why doesn't flushing this to the server not also make appear on own screen -- as it's still going to serverInputStream!
+                    String msg = jWrite.buildMessage(message);
+                    writer.println(msg);      // Send `msg` to the writer, and flush to actually send over the network.
+                    writer.flush();         // Why doesn't flushing this to the server not also make appear on own screen -- as it's still going to serverInputStream!
 
-                    } catch (JsonProcessingException e) {
-                        e.printStackTrace();
-                    }
                 }
                 else if (text.equals("") && this.client.getReadyToRock()) {
                     System.out.println(ANSI_YELLOW+"---> You can't send nothing! Try something else."+ANSI_RESET);
