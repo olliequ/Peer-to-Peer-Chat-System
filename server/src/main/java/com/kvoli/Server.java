@@ -397,6 +397,23 @@ public class Server {
     conn.close();
   }
 
+
+  private synchronized void closeRooms(ServerConnection conn) {
+    try {
+      for (Iterator<Room> it = currentRooms.iterator(); it.hasNext(); ) {
+        Room r = it.next();
+        // While we're here, if the room has no owner AND no contents then delete it.
+        if (r.getRoomOwner().equals("") && (r.getRoomContents().size() == 0) && !r.getRoomName().equals("MainHall")) {
+          System.out.println("Server to delete room: " + r.getRoomName());
+          it.remove();
+        }
+      }
+    } catch (Exception e) {
+      System.out.println("Exception raised when closing rooms. ");
+    }
+
+  }
+
   /**
    * All current clients have a 'ServerConnection' which is used to listen to each client.
    * Each client is identified by the String 'identity'
@@ -529,6 +546,9 @@ public class Server {
               quit(this, roomID);
             }
 
+            // Scan through the rooms and delete rooms that have no owner AND are empty
+            closeRooms(this);
+
           } else {
             //close();
             connectionAlive = false;
@@ -541,7 +561,8 @@ public class Server {
 
       if (!gracefulDisconnection) {
         // If client didn't disconnect via #quit then force close the connection.
-        close();
+        System.out.println("NOT GRACEFUL");
+        quit(this, roomID);
       }
     }
 
@@ -556,21 +577,18 @@ public class Server {
         // Also, if they are the owner of any room then we remove their ownership.
         for (Iterator<Room> it = currentRooms.iterator(); it.hasNext(); ) {
           Room r = it.next();
-          //System.out.println("ITERATING...");
           if (identity.equals(r.getRoomOwner())) {
             r.setRoomOwner("");
           }
           // While we're here, if the room has no owner AND no contents then delete it.
-          if (r.getRoomOwner().equals("") && (r.getRoomContents().size() == 0)) {
+          if (r.getRoomOwner().equals("") && (r.getRoomContents().size() == 0) && !r.getRoomName().equals("MainHall")) {
             System.out.println("Server to delete room: " + r.getRoomName());
-            //int index = getRoomIndex(r.getRoomName());
             it.remove();
           }
         }
 
         currentRooms.get(getRoomIndex(roomID)).setRoomOwner("");
         currentRooms.get(getRoomIndex(roomID)).removeUser(identity);
-
         disconnect(this);
         reader.close();
         writer.close();
@@ -579,7 +597,7 @@ public class Server {
         gracefulDisconnection = true;
 
       } catch (IOException e) {
-        System.out.println(e.getMessage());
+        //System.out.println(e.getMessage());
       }
     }
   }
