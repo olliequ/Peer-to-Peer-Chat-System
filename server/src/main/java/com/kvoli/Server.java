@@ -12,7 +12,7 @@ import java.util.List;
 
 public class Server {
   private boolean acceptConnections = false;
-  public static final int PORT = 4444;        // changed from 6379 to 4444
+  public static int PORT = 4444;        // changed from 6379 to 4444
   private volatile List<ServerConnection> currentConnections = new ArrayList<>();
   private volatile List<Room> currentRooms = new ArrayList<>();
   private int guestCount = 0;                   // Used to identify new users. E.g. "guest5 has joined the server".
@@ -21,6 +21,12 @@ public class Server {
   public static final String ANSI_CYAN = "\u001B[36m";
   public static final String ANSI_GREEN = "\u001B[32m";
   public static final String ANSI_RESET = "\u001B[0m";
+
+  public Server() {}
+
+  public Server(int port) {
+    this.PORT = port;
+  }
 
 
   // Listen for new connections and create the initial room.
@@ -80,11 +86,12 @@ public class Server {
     conn.sendMessage(serverMessage + ". \n");
 
     for (Room room: currentRooms) {
-      String ln = "\t\t---> "+room.getRoomName() + " has " + room.getRoomSize() + " guest(s) currently inside.";
-      String roomInfoJSON = jsonBuild.buildJSON(ln, "Server");
-      System.out.format("Printing Room JSON String: %s%n", roomInfoJSON);
-      conn.sendMessage(roomInfoJSON);
-      conn.sendMessage("\n");
+     // String ln = "\t\t---> "+room.getRoomName() + " has " + room.getRoomSize() + " guest(s) currently inside.";
+     // String roomInfoJSON = jsonBuild.buildJSON(ln, "Server");
+     // System.out.format("Printing Room JSON String: %s%n", roomInfoJSON);
+      getRoomList(conn, false, null);
+      //conn.sendMessage(roomInfoJSON);
+      //conn.sendMessage("\n");
     }
   }
 
@@ -248,7 +255,7 @@ public class Server {
     }
   }
 
-  // Method used for the RoomList protocol. The third parameter is optional.
+  // Method used for the RoomList protocol. Second and third parameter optional.
   private synchronized void getRoomList(ServerConnection conn, boolean createModifiedList, String newRoomID) {
     List<String> roomContents = new ArrayList<String>();
     ArrayList<ArrayList<String>> roomInformation = new ArrayList<>();
@@ -363,20 +370,22 @@ public class Server {
       }
       // Else the requesting client is NOT the owner and thus doesn't have permission to delete.
       else {
-        String deleteErrorMessage = ANSI_RED+"You are not the owner of "+roomid+" and so do not have permission to delete it. Nice try, though!"+ANSI_RESET;
-        String deleteErrorMessageJSON = jsonBuild1.buildJSON(deleteErrorMessage, "Server");
-        System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
-        System.out.println("DeleteError JSON: " + deleteErrorMessageJSON);
-        conn.sendMessage(deleteErrorMessageJSON + "\n");
+//        String deleteErrorMessage = ANSI_RED+"You are not the owner of "+roomid+" and so do not have permission to delete it. Nice try, though!"+ANSI_RESET;
+//        String deleteErrorMessageJSON = jsonBuild1.buildJSON(deleteErrorMessage, "Server");
+//        System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+//        System.out.println("DeleteError JSON: " + deleteErrorMessageJSON);
+//        conn.sendMessage(deleteErrorMessageJSON + "\n");
+        getRoomList(conn, false, null);
       }
     }
     // Else the requested room does not exist.
     else {
-      String deleteErrorMessage = ANSI_RED+"The room you're trying to delete ("+roomid+") does not exist."+ANSI_RESET;
-      String deleteErrorMessageJSON = jsonBuild1.buildJSON(deleteErrorMessage, "Server");
-      System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
-      System.out.println("DeleteError JSON: " + deleteErrorMessageJSON);
-      conn.sendMessage(deleteErrorMessageJSON + "\n");
+//      String deleteErrorMessage = ANSI_RED+"The room you're trying to delete ("+roomid+") does not exist."+ANSI_RESET;
+//      String deleteErrorMessageJSON = jsonBuild1.buildJSON(deleteErrorMessage, "Server");
+//      System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+//      System.out.println("DeleteError JSON: " + deleteErrorMessageJSON);
+//      conn.sendMessage(deleteErrorMessageJSON + "\n");
+      getRoomList(conn, false, null);
     }
   }
 
