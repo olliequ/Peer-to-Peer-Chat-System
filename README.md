@@ -1,10 +1,4 @@
-# Current functionality (outdated)
-- Clients are allocated a room. Rooms are created by appending Room objects (Room.java) into the currentRooms arraylist in Server.java)
-- Client send messages as JSON.
-- Server responds with messages as JSON.
-- Client can make identitychange request (see SendMessageThread in Base).
-- Server can act appropriately to identitychange request.
-- Client can #join room. Client can call #list. Client can #quit. 
+# TESTING REQUIRED! 
 
 
 ## TODO: Client protocols (see ClientPackets in base)           
