@@ -13,8 +13,8 @@ public class Main {
                 Server server = new Server();
                 server.handle();
             }
-            else if (args.length == 2) {
-                int port = Integer.parseInt(args[1]);
+            else if (args.length == 1) {
+                int port = Integer.parseInt(args[0]);
                 System.out.println("Attempting to build server on port " + port);
                 Server server = new Server(port);
                 server.handle();
