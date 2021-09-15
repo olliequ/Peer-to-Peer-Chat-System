@@ -1,7 +1,9 @@
 package com.kvoli;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class Client {
   private final String serverAddress;
@@ -24,8 +26,10 @@ public class Client {
   protected String roomToDelete = "";
   protected boolean clientToQuit = false;
   protected boolean clientToCreateRoom = false;
-  protected boolean clientListCmdStatus = false;
+  protected boolean clientListCmdStatus = true;
   protected boolean clientWantsToDelete = false;
+  protected ArrayList<String> localRoomList;
+  protected boolean roomInLocalRoomList = false;
 
   public Client(String serverAddress, int serverPort) {
     this.serverAddress = serverAddress;
@@ -135,6 +139,22 @@ public class Client {
   protected void setDeleteStatus(boolean status) {
     this.clientWantsToDelete = status;
   }
+
+  protected void setLocalRoomList(ArrayList<String> roomList) {
+    this.localRoomList = roomList;
+  }
+  protected ArrayList<String> getLocalRoomList() {
+    return this.localRoomList;
+  }
+
+  protected void setRoomInLocalRoomList(boolean value) {
+    this.roomInLocalRoomList = value;
+  }
+  protected boolean getRoomInLocalRoomList() {
+    return roomInLocalRoomList;
+  }
+
+
 
 
   protected void close() {

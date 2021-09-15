@@ -1,9 +1,7 @@
 package com.kvoli;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.kvoli.base.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -14,7 +12,7 @@ import java.util.List;
 
 public class Server {
   private boolean acceptConnections = false;
-  public static final int PORT = 4444;        // changed from 6379 to 4444
+  public static int PORT = 4444;        // changed from 6379 to 4444
   private volatile List<ServerConnection> currentConnections = new ArrayList<>();
   private volatile List<Room> currentRooms = new ArrayList<>();
   private int guestCount = 0;                   // Used to identify new users. E.g. "guest5 has joined the server".
@@ -23,6 +21,12 @@ public class Server {
   public static final String ANSI_CYAN = "\u001B[36m";
   public static final String ANSI_GREEN = "\u001B[32m";
   public static final String ANSI_RESET = "\u001B[0m";
+
+  public Server() {}
+
+  public Server(int port) {
+    this.PORT = port;
+  }
 
 
   // Listen for new connections and create the initial room.
@@ -42,16 +46,13 @@ public class Server {
         Socket socket = serverSocket.accept(); // Generate new socket based off the encompassing ServerSocket -- accept it.
         System.out.println(ANSI_GREEN+"\nAccepted connection from client with port number: " + socket.getPort()+ANSI_RESET); // Port # of client.
 
-        // Perform operations with the socket (client)
-        // Now that the socket is assigned to a room, their messages should only be restricted to that room.
-        // Note: by default, new users are added to the Main Hall (roomID = "MainHall").
+        // Assign name
         guestCount += 1;
         String clientName = "Guest" + guestCount;
-        //currentRooms.get(0).addUser(clientName); // Go to 0 because always land on MainHall.
 
+        // Perform operations with the socket (client)
         // Start a connection which will have its own thread of execution. Then we don't care about it anymore.
         // The connection will be able to handle itself.
-        //ServerConnection currentConnection = new ServerConnection(socket, clientName, "MainHall");
         ServerConnection currentConnection = new ServerConnection(socket, clientName, "");
         currentConnection.start();
         connect(currentConnection);
@@ -85,11 +86,12 @@ public class Server {
     conn.sendMessage(serverMessage + ". \n");
 
     for (Room room: currentRooms) {
-      String ln = "\t\t---> "+room.getRoomName() + " has " + room.getRoomSize() + " guest(s) currently inside.";
-      String roomInfoJSON = jsonBuild.buildJSON(ln, "Server");
-      System.out.format("Printing Room JSON String: %s%n", roomInfoJSON);
-      conn.sendMessage(roomInfoJSON);
-      conn.sendMessage("\n");
+     // String ln = "\t\t---> "+room.getRoomName() + " has " + room.getRoomSize() + " guest(s) currently inside.";
+     // String roomInfoJSON = jsonBuild.buildJSON(ln, "Server");
+     // System.out.format("Printing Room JSON String: %s%n", roomInfoJSON);
+      getRoomList(conn, false, null);
+      //conn.sendMessage(roomInfoJSON);
+      //conn.sendMessage("\n");
     }
   }
 
@@ -253,7 +255,7 @@ public class Server {
     }
   }
 
-  // Method used for the RoomList protocol. The third parameter is optional.
+  // Method used for the RoomList protocol. Second and third parameter optional.
   private synchronized void getRoomList(ServerConnection conn, boolean createModifiedList, String newRoomID) {
     List<String> roomContents = new ArrayList<String>();
     ArrayList<ArrayList<String>> roomInformation = new ArrayList<>();
@@ -368,20 +370,22 @@ public class Server {
       }
       // Else the requesting client is NOT the owner and thus doesn't have permission to delete.
       else {
-        String deleteErrorMessage = ANSI_RED+"You are not the owner of "+roomid+" and so do not have permission to delete it. Nice try, though!"+ANSI_RESET;
-        String deleteErrorMessageJSON = jsonBuild1.buildJSON(deleteErrorMessage, "Server");
-        System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
-        System.out.println("DeleteError JSON: " + deleteErrorMessageJSON);
-        conn.sendMessage(deleteErrorMessageJSON + "\n");
+//        String deleteErrorMessage = ANSI_RED+"You are not the owner of "+roomid+" and so do not have permission to delete it. Nice try, though!"+ANSI_RESET;
+//        String deleteErrorMessageJSON = jsonBuild1.buildJSON(deleteErrorMessage, "Server");
+//        System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+//        System.out.println("DeleteError JSON: " + deleteErrorMessageJSON);
+//        conn.sendMessage(deleteErrorMessageJSON + "\n");
+        getRoomList(conn, false, null);
       }
     }
     // Else the requested room does not exist.
     else {
-      String deleteErrorMessage = ANSI_RED+"The room you're trying to delete ("+roomid+") does not exist."+ANSI_RESET;
-      String deleteErrorMessageJSON = jsonBuild1.buildJSON(deleteErrorMessage, "Server");
-      System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
-      System.out.println("DeleteError JSON: " + deleteErrorMessageJSON);
-      conn.sendMessage(deleteErrorMessageJSON + "\n");
+//      String deleteErrorMessage = ANSI_RED+"The room you're trying to delete ("+roomid+") does not exist."+ANSI_RESET;
+//      String deleteErrorMessageJSON = jsonBuild1.buildJSON(deleteErrorMessage, "Server");
+//      System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+//      System.out.println("DeleteError JSON: " + deleteErrorMessageJSON);
+//      conn.sendMessage(deleteErrorMessageJSON + "\n");
+      getRoomList(conn, false, null);
     }
   }
 
@@ -395,6 +399,23 @@ public class Server {
     // Send roomChange JSON to the requesting client which will result in disconnect.
     conn.sendMessage(serverMessage + "\n");
     conn.close();
+  }
+
+
+  private synchronized void closeRooms(ServerConnection conn) {
+    try {
+      for (Iterator<Room> it = currentRooms.iterator(); it.hasNext(); ) {
+        Room r = it.next();
+        // While we're here, if the room has no owner AND no contents then delete it.
+        if (r.getRoomOwner().equals("") && (r.getRoomContents().size() == 0) && !r.getRoomName().equals("MainHall")) {
+          System.out.println("Server to delete room: " + r.getRoomName() + " as it is empty with no owner.");
+          it.remove();
+        }
+      }
+    } catch (Exception e) {
+      System.out.println("Exception raised when closing rooms. ");
+    }
+
   }
 
   /**
@@ -445,9 +466,9 @@ public class Server {
           JSONReader read = new JSONReader();
           msg = read.readMSg(in);
           if (in != null) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(in); // Parse the received string into JSON form.
-            String type = jsonNode.get("type").asText();   // Extract the value from the 'type' key field.
+            JSONReader jRead = new JSONReader();
+            jRead.readInput(in);
+            String type = jRead.getJSONType();   // Extract the value from the 'type' key field.
             System.out.format(ANSI_RED+"%nReceived "+"JSON string of type: %s. It is below:%n"+ANSI_RESET, type);
 
             /**
@@ -463,7 +484,7 @@ public class Server {
             else if (type.equals("identitychange")) {
               System.out.format("Raw IC JSON: %s%n", in);
               String oldIdentity = identity;
-              String newIdentity = jsonNode.get("identity").asText();
+              String newIdentity = jRead.getJSONIdentity();
               boolean isValidIdentity = verifyIdentity(this, newIdentity);
               String newIdentityMessage = changeIdentity(this, newIdentity, isValidIdentity);
               if (isValidIdentity) {
@@ -474,7 +495,7 @@ public class Server {
 
             else if (type.equals("join")) {
               System.out.format("JoinRoom JSON: %s%n", in);
-              String newRoom = jsonNode.get("roomid").asText();
+              String newRoom = jRead.getJSONRoomId();
               System.out.println("Note: User is attempting to join '" + newRoom+"'.");
               String currentRoom = roomID;
               joinRoom(this, currentRoom, newRoom);
@@ -487,7 +508,7 @@ public class Server {
 
             else if (type.equals("who")) {
               System.out.format("Who JSON: %s%n", in);
-              String whoRoom = jsonNode.get("roomid").asText();
+              String whoRoom = jRead.getJSONRoomId();
               boolean roomExists = false;
               // Check that the room they're inquiring about exists.
               for (Room r: currentRooms) {
@@ -514,13 +535,13 @@ public class Server {
 
             else if (type.equals("createroom")) {
               System.out.format("CreateRoom JSON: %s%n", in);
-              String newRoomID = jsonNode.get("roomid").asText();
+              String newRoomID = jRead.getJSONRoomId();
               createNewRoom(this, newRoomID);
             }
 
             else if (type.equals("delete")) {
               System.out.format("DeleteRoom JSON: %s%n", in);
-              String roomToDelete = jsonNode.get("roomid").asText();
+              String roomToDelete = jRead.getJSONRoomId();
               deleteRoom(this, roomToDelete);
             }
 
@@ -528,6 +549,9 @@ public class Server {
               System.out.format("Quit JSON: %s%n", in);
               quit(this, roomID);
             }
+
+            // Scan through the rooms and delete rooms that have no owner AND are empty
+            closeRooms(this);
 
           } else {
             //close();
@@ -541,13 +565,9 @@ public class Server {
       }
 
       if (!gracefulDisconnection) {
-        String nonGracefulExitMessage = this.identity+" has unexpectedly disconnected.";
-        String exitMessage = jsonBuild.buildJSON(nonGracefulExitMessage, "Server"); // Calls method that builds the JSON String.
-        System.out.format("%n"+ANSI_BLUE+"Sending "+"JSON string(s). Check below:%n"+ANSI_RESET);
-        System.out.format("Welcome JSON String: %s%n", exitMessage);
-        broadcastRoom(exitMessage, roomID, null, this.identity, true);
+        // If client didn't disconnect via #quit then force close the connection.
+        System.out.println("NOT GRACEFUL");
         quit(this, roomID);
-        close();
       }
     }
 
@@ -562,21 +582,18 @@ public class Server {
         // Also, if they are the owner of any room then we remove their ownership.
         for (Iterator<Room> it = currentRooms.iterator(); it.hasNext(); ) {
           Room r = it.next();
-          //System.out.println("ITERATING...");
           if (identity.equals(r.getRoomOwner())) {
             r.setRoomOwner("");
           }
           // While we're here, if the room has no owner AND no contents then delete it.
-          if (r.getRoomOwner().equals("") && (r.getRoomContents().size() == 0 && !r.getRoomName().equals("MainHall"))) {
+          if (r.getRoomOwner().equals("") && (r.getRoomContents().size() == 0) && !r.getRoomName().equals("MainHall")) {
             System.out.println("Server to delete room: " + r.getRoomName());
-            //int index = getRoomIndex(r.getRoomName());
             it.remove();
           }
         }
 
         currentRooms.get(getRoomIndex(roomID)).setRoomOwner("");
         currentRooms.get(getRoomIndex(roomID)).removeUser(identity);
-
         disconnect(this);
         reader.close();
         writer.close();
@@ -585,7 +602,7 @@ public class Server {
         gracefulDisconnection = true;
 
       } catch (IOException e) {
-        System.out.println(e.getMessage());
+        //System.out.println(e.getMessage());
       }
     }
   }

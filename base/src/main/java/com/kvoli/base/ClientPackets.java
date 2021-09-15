@@ -7,11 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 
-/** TODO LIST: CLIENT COMMANDS
- * who
- * createroom
- * delete
- */
+
 
 public class ClientPackets {
     @JsonTypeInfo(
