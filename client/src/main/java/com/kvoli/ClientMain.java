@@ -9,7 +9,7 @@ public class ClientMain {
         try {
             // Check args passed into server
             if (args.length == 0) {
-                System.out.println("Error: Please provide a server address.");
+                System.out.println("Error: Please provide a server address next time.");
             }
             else if (args.length == 1) {
                 String address = args[0];
