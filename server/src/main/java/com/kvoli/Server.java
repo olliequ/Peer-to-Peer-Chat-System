@@ -533,6 +533,7 @@ public class Server {
             //close();
             connectionAlive = false;
           }
+
         } catch (IOException e) {
           //close();
           connectionAlive = false;
@@ -540,7 +541,12 @@ public class Server {
       }
 
       if (!gracefulDisconnection) {
-        // If client didn't disconnect via #quit then force close the connection.
+        String nonGracefulExitMessage = this.identity+" has unexpectedly disconnected.";
+        String exitMessage = jsonBuild.buildJSON(nonGracefulExitMessage, "Server"); // Calls method that builds the JSON String.
+        System.out.format("%n"+ANSI_BLUE+"Sending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+        System.out.format("Welcome JSON String: %s%n", exitMessage);
+        broadcastRoom(exitMessage, roomID, null, this.identity, true);
+        quit(this, roomID);
         close();
       }
     }
@@ -561,7 +567,7 @@ public class Server {
             r.setRoomOwner("");
           }
           // While we're here, if the room has no owner AND no contents then delete it.
-          if (r.getRoomOwner().equals("") && (r.getRoomContents().size() == 0)) {
+          if (r.getRoomOwner().equals("") && (r.getRoomContents().size() == 0 && !r.getRoomName().equals("MainHall"))) {
             System.out.println("Server to delete room: " + r.getRoomName());
             //int index = getRoomIndex(r.getRoomName());
             it.remove();

@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
+import java.io.Console;
 
 
 public class SendMessageThread extends Thread {
@@ -35,9 +36,15 @@ public class SendMessageThread extends Thread {
         while (sendingMessages) {
             ObjectMapper objectMapper = new ObjectMapper();
             ParentClientID = this.client.getIdentity();
-            String text = "";
-            Scanner keyboard = new Scanner(System.in);
-            text = keyboard.nextLine();
+//            String text = "";
+//            Scanner keyboard = new Scanner(System.in);
+//            text = keyboard.nextLine();
+
+            Console con = System.console();
+            String text = " ";
+            // text = con.readLine("["+this.client.getCurrentRoom()+"]"+this.client.getIdentity()+"> ");
+            text = con.readLine("Pls enter something: ");
+            System.out.println(text);
 
             // First we parse the client scanner input. Are they issuing a server command?
 
