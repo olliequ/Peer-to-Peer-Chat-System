@@ -37,8 +37,16 @@ public class SendMessageThread extends Thread {
             // ObjectMapper objectMapper = new ObjectMapper();
             JSONWriter jWrite = new JSONWriter();
             ParentClientID = this.client.getIdentity();
-
             String text = "";
+
+//            try {
+//                Thread.sleep(500);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            Console con = System.console();
+//            text = con.readLine("["+this.client.getCurrentRoom()+"] "+this.client.getIdentity()+"> ");
+
             try {
                 Scanner keyboard = new Scanner(System.in);
                 text = keyboard.nextLine();
@@ -59,7 +67,6 @@ public class SendMessageThread extends Thread {
                 String msg = jWrite.buildIdentityChangeMsg(identityChange);
                 writer.println(msg);
                 writer.flush();
-
             }
 
             // Client command JOIN

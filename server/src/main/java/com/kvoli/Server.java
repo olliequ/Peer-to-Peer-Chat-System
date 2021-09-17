@@ -44,7 +44,7 @@ public class Server {
       while (acceptConnections) {
         // Accepted a connection. Move them to the main hall room.
         Socket socket = serverSocket.accept(); // Generate new socket based off the encompassing ServerSocket -- accept it.
-        System.out.println(ANSI_GREEN+"\nAccepted connection from client with port number: " + socket.getPort()+ANSI_RESET); // Port # of client.
+        System.out.println("\nAccepted connection from client with port number: " + socket.getPort()); // Port # of client.
 
         // Assign name
         guestCount += 1;
@@ -77,11 +77,11 @@ public class Server {
 
   // Display a welcome message to the new user along with list of current rooms.
   private void welcome(String clientIdentity, ServerConnection conn) {
-    String welcomeClient = "---> Welcome! You are connected as: "+ANSI_CYAN+clientIdentity+ANSI_RESET+"\n---> Here's a rundown on the currently active rooms:";
+    String welcomeClient = "---> Welcome! You are connected as: "+clientIdentity+"\n---> Here's a rundown on the currently active rooms:";
     String FromServerOrNot = "Yes"; // Make this a boolean instead?
     JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
     String serverMessage = jsonBuild.buildJSON(welcomeClient, "Server"); // Calls method that builds the JSON String.
-    System.out.format("%n"+ANSI_BLUE+"Sending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+    System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
     System.out.format("Welcome JSON String: %s%n", serverMessage);
     conn.sendMessage(serverMessage + ". \n");
 
@@ -136,7 +136,7 @@ public class Server {
            */
           JSONWriter jsonBuild = new JSONWriter();
           String serverMessage = jsonBuild.buildJSON(message, ID);
-          System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+          System.out.format("%nSending "+"JSON string(s). Check below:%n");
           System.out.println("BroadcastRoom JSON: " + serverMessage);
           // Now broadcast the JSON string to everyone in the room.
           c.sendMessage(serverMessage + "\n");
@@ -147,7 +147,7 @@ public class Server {
       else if (c.roomID.equals(roomID) && isJson) {
         if (ignored == null || !ignored.equals(c)) {
           // Broadcast the JSON string to everyone in the room.
-          System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+          System.out.format("%nSending "+"JSON string(s). Check below:%n");
           System.out.println("BroadcastRoom JSON: " + message);
           c.sendMessage(message + "\n");
         }
@@ -270,7 +270,7 @@ public class Server {
       // Wrap this information in a RoomList JSON and send it over to the client.
       JSONWriter jsonBuild = new JSONWriter();
       String roomList = jsonBuild.buildJsonRoomList(roomContents);
-      System.out.format("%n"+ANSI_BLUE+"Sending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+      System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
       System.out.format("RoomListJSON: %s%n", roomList);
       conn.sendMessage(roomList + "\n");
     }
@@ -287,7 +287,7 @@ public class Server {
       // Wrap this information in a RoomList JSON and send it over.
       JSONWriter jsonBuild = new JSONWriter();
       String roomList = jsonBuild.buildJsonRoomList(roomContents);
-      System.out.format("%n"+ANSI_BLUE+"Sending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+      System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
       System.out.println("Note: Failed to create new room as it already exists or is invalidly named. Sending reduced JSON now.");
       System.out.format("Invalid room, reduced RoomList JSON: %s%n", roomList);
       conn.sendMessage(roomList + "\n");
@@ -415,7 +415,6 @@ public class Server {
     } catch (Exception e) {
       System.out.println("Exception raised when closing rooms. ");
     }
-
   }
 
   /**
@@ -447,7 +446,7 @@ public class Server {
       // Manage the connection here
       connectionAlive = true;
       // Below tells the new client where it is. The line below that will inform the other clients. TODO: ***Not being received atm.
-      String msg = ANSI_RED+"---> "+identity+", has entered "+currentRooms.get(roomIndex).getRoomName()+". Be nice!"+ANSI_RESET;
+      String msg = "---> "+identity+", has entered "+currentRooms.get(roomIndex).getRoomName()+". Be nice!";
       broadcastRoom(msg, roomID, this, "Server", false);
 
       // Server sends NewIdentity JSON to client to give it its initial username (e.g. guestXXXXX).
@@ -469,7 +468,7 @@ public class Server {
             JSONReader jRead = new JSONReader();
             jRead.readInput(in);
             String type = jRead.getJSONType();   // Extract the value from the 'type' key field.
-            System.out.format(ANSI_RED+"%nReceived "+"JSON string of type: %s. It is below:%n"+ANSI_RESET, type);
+            System.out.format("%nReceived "+"JSON string of type: %s. It is below:%n", type);
 
             /**
              * The below if-else statements analyse the received JSON object type, and act accordingly.
@@ -519,7 +518,7 @@ public class Server {
               // If the room does exist, send the room contents.
               if (roomExists) {
               String contents = getRoomContents(this, whoRoom);
-              System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+              System.out.format("%nSending "+"JSON string(s). Check below:%n");
               System.out.println("BroadcastRoom JSON: " + contents);
               sendMessage(contents + "\n");
               }
@@ -527,7 +526,7 @@ public class Server {
               else {
                 String whoErrorMessage = "The room you're inquiring about ("+whoRoom+") doesn't exist. Try again.";
                 String serverMessageJSON = jsonBuild.buildJSON(whoErrorMessage, "Server");
-                System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
+                System.out.format("%nSending "+"JSON string(s). Check below:%n");
                 System.out.println("WrongWho JSON: " + serverMessageJSON);
                 this.sendMessage(serverMessageJSON + "\n");
               }

@@ -40,7 +40,7 @@ public class Client {
     if (client.connect())
     {
       this.Connected = true;
-      System.out.println(ANSI_GREEN+"\nConnection successfully established to the server.\n"+ ANSI_RESET);
+      System.out.println("\nConnection successfully established to the server.\n");
       new GetMessageThread(this).start();
       new SendMessageThread(this).start();
     }
