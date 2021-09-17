@@ -17,9 +17,9 @@ public class ClientMain {
                 Client client = new Client("localhost", defaultPort);
                 client.handle(client);
             }
-            else if (args.length == 2) {
+            else if (args.length == 3) {
                 String address = args[0];
-                int port = Integer.parseInt(args[1]);
+                int port = Integer.parseInt(args[2]);
                 System.out.println("Attempting to form connection with server " + address  + " port " + port);
                 Client client = new Client("localhost", port);
                 client.handle(client);
