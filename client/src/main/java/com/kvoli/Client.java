@@ -8,7 +8,6 @@ import java.util.ArrayList;
 public class Client {
   private final String serverAddress;
   private final int serverPort;
-  //protected String Identity = "";
   protected String Identity = "1stEver";
   protected boolean ReadyToRock = false;
   protected String currentRoom = "Wrong room";
@@ -153,7 +152,6 @@ public class Client {
   protected boolean getRoomInLocalRoomList() {
     return roomInLocalRoomList;
   }
-
 
 
 

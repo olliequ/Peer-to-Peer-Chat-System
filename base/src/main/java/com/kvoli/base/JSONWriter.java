@@ -9,6 +9,11 @@ import java.util.Arrays;
 import java.util.List;
 
 
+/**
+ * This class is used for the construction of JSON strings (via Jackson).
+ * It is used by both Server.java and SendMessageThread of Client.java
+ */
+
 public class JSONWriter {
     private ObjectMapper oMapper = new ObjectMapper();
 
@@ -95,7 +100,7 @@ public class JSONWriter {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
 
-        // TODO: BAD VARIABLE NAME
+
         ArrayList<ArrayList<String>> test = new ArrayList<ArrayList<String>>();
 
         try{

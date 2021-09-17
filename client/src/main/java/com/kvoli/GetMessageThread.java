@@ -191,10 +191,7 @@ public class GetMessageThread extends Thread {
                             }
                         }
                         this.client.setLocalRoomList(localRooms);
-                        // DEBUG
-//                        System.out.println("ALREADY EXISTS: " + alreadyExistsOrInvalid);
-//                        System.out.println("RIL STAT: " + roomInList);
-//                        System.out.println("DEL STAT: " + this.client.getDeleteStatus());
+
 
                         /**
                          * If the room already existed, it's not in the received list, and we're not dealing with a #list or #delete command.
@@ -246,13 +243,11 @@ public class GetMessageThread extends Thread {
 
 
                         /**
-                         * For a successful room deletion.
+                         * Handle the case for a successful room deletion.
                          */
                         else if (alreadyExistsOrInvalid && !roomInList && !this.client.getListCommandStatus() && this.client.getDeleteStatus()) {
                             // If our room to delete wasn't in the list, then it was deleted.
                             System.out.println("Room " + this.client.roomToDelete + " was deleted.");
-
-//                          System.out.println("Room " + this.client.roomToDelete + " was deleted.");
                             this.client.setRoomToDelete("");     // Reset this room to delete string, because delete was successful.
                             this.client.setDeleteStatus(false);  // Requirement to delete something no longer needed as job finished.
                         }

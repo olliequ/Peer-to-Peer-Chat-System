@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 
+/**
+ * This class contains the list of client protocols that is to be used by the client in SendMessageThread.
+ */
 
 
 public class ClientPackets {
@@ -87,7 +90,7 @@ public class ClientPackets {
         }
     }
 
-    // TODO
+
     @JsonTypeName("who")
     public static class Who {
         public String type = "who";

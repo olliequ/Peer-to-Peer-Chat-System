@@ -5,7 +5,12 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import java.util.HashMap;
 import java.util.Map;
 
-// Bad practices / cheat codes
+/**
+ * Class not used in project.
+ */
+
+
+
 public class Command {
   public String type;
   private Map<String, String> properties = new HashMap<>();

@@ -6,6 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 
+
+/**
+ * This class is used to read JSON objects (via Jackson).
+ * It is used by Server.java and GetMessageThread of Client.java.
+ */
+
 public class JSONReader {
     private JsonNode jNode;
     private JsonNode jNode1;

@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-/** TODO LIST: SERVER COMMANDS
- * roomcontents
+/**
+ * This class contains the list of outbound Server Protocols used by the server in Server.java
  */
 
 public class ServerPackets {

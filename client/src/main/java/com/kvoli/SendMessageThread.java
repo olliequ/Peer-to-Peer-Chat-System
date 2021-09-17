@@ -1,7 +1,6 @@
 package com.kvoli;
 
-//import com.fasterxml.jackson.core.JsonProcessingException;
-//import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.kvoli.base.Base;
 import com.kvoli.base.ClientPackets;
 import com.kvoli.base.JSONReader;
@@ -38,14 +37,6 @@ public class SendMessageThread extends Thread {
             JSONWriter jWrite = new JSONWriter();
             ParentClientID = this.client.getIdentity();
             String text = "";
-
-//            try {
-//                Thread.sleep(500);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//            Console con = System.console();
-//            text = con.readLine("["+this.client.getCurrentRoom()+"] "+this.client.getIdentity()+"> ");
 
             try {
                 Scanner keyboard = new Scanner(System.in);
@@ -142,21 +133,13 @@ public class SendMessageThread extends Thread {
 
                 this.client.setRoomToDelete(delete);
                 this.client.setDeleteStatus(true);
-//                System.out.println("DEBUG SEND " + delete + " " + this.client.getLocalRoomList().contains(delete));
-//                for (String room : this.client.getLocalRoomList()) {
-//                    System.out.println("ROOM " + room);
-//                }
 
                 if (this.client.getLocalRoomList().contains(delete)) {
                     this.client.setRoomInLocalRoomList(true);
                 } else {
                     this.client.setRoomInLocalRoomList(false);
-//                    System.out.println("ROOM NOT IN LOCAL ");
                 }
 
-
-
-                //System.out.println("The room to delete is " + roomToDelete);
 
                 String msg = jWrite.buildDeleteMessage(deleteMsg);
                 writer.println(msg);

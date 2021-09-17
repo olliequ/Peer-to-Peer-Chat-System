@@ -24,10 +24,5 @@ public class Main {
             System.out.println("ERROR: There was an issue parsing your input. Please try again.");
         }
 
-
-        //int port = Integer.parseInt(args[1]);
-       // System.out.println("Attempting to build server on port " + port);
-
-
     }
 }

@@ -5,6 +5,11 @@ import com.kvoli.base.Base;
 
 import java.util.ArrayList;
 
+/**
+ * A server can have many room objects of type Room.
+ * These rooms are stored in the server within the currentRooms list.
+ */
+
 public class Room {
 
     // Instance variables

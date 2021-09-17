@@ -4,6 +4,11 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
+/**
+ * Class not used. See ClientPackets and ServerPackets
+ */
+
+
 // Better but not exactly idiomatic - move stuff out of the static classes and it's good.
 public class Packets {
 

@@ -12,7 +12,7 @@ import java.util.List;
 
 public class Server {
   private boolean acceptConnections = false;
-  public static int PORT = 4444;        // changed from 6379 to 4444
+  public static int PORT = 4444;
   private volatile List<ServerConnection> currentConnections = new ArrayList<>();
   private volatile List<Room> currentRooms = new ArrayList<>();
   private int guestCount = 0;                   // Used to identify new users. E.g. "guest5 has joined the server".
@@ -86,12 +86,7 @@ public class Server {
     conn.sendMessage(serverMessage + ". \n");
 
     for (Room room: currentRooms) {
-     // String ln = "\t\t---> "+room.getRoomName() + " has " + room.getRoomSize() + " guest(s) currently inside.";
-     // String roomInfoJSON = jsonBuild.buildJSON(ln, "Server");
-     // System.out.format("Printing Room JSON String: %s%n", roomInfoJSON);
       getRoomList(conn, false, null);
-      //conn.sendMessage(roomInfoJSON);
-      //conn.sendMessage("\n");
     }
   }
 
@@ -108,6 +103,7 @@ public class Server {
     return -1;
   }
 
+
   // Old method. A bit redundant but still in use.
   // Broadcast a server message (CONNECT/DISCONNECT) to everyone in a room except the ignored person (usually yourself).
   private synchronized void broadcast(String message, ServerConnection ignored) {
@@ -118,6 +114,7 @@ public class Server {
       }
     }
   }
+
 
   /**
    * New method to broadcast to users within the same room as the messenger.
@@ -155,6 +152,7 @@ public class Server {
     }
   }
 
+
   // Method to verify user identity (used for the changeIdentity method below)
   private synchronized boolean verifyIdentity(ServerConnection conn, String newIdentity) {
     // Make sure the new identity is unique
@@ -172,6 +170,7 @@ public class Server {
     }
     return true;
   }
+
 
   private synchronized String changeIdentity(ServerConnection conn, String newIdentity, boolean isValid) {
     // If the new identity is invalid then we tell the client that we can't change their identity.
@@ -201,6 +200,7 @@ public class Server {
       return serverMessage;
     }
   }
+
 
   // Method to allow a client to join a room.
   private synchronized void joinRoom(ServerConnection conn, String oldRoom, String newRoom) {
@@ -255,6 +255,7 @@ public class Server {
     }
   }
 
+
   // Method used for the RoomList protocol. Second and third parameter optional.
   private synchronized void getRoomList(ServerConnection conn, boolean createModifiedList, String newRoomID) {
     List<String> roomContents = new ArrayList<String>();
@@ -294,6 +295,7 @@ public class Server {
     }
   }
 
+
   private synchronized String getRoomContents(ServerConnection conn, String roomid) {
     // Navigate to the current room and retrieve room occupants.
     List<String> roomContents = new ArrayList<String>();
@@ -312,6 +314,7 @@ public class Server {
     // Return to the calling client
     return roomContentsMsg;
   }
+
 
   private synchronized void createNewRoom(ServerConnection conn, String newRoomID) {
     // Verify the new room id, and ensure new identity is alphanumeric and between 3 - 16 characters.
@@ -345,6 +348,7 @@ public class Server {
     }
   }
 
+
   private synchronized void deleteRoom(ServerConnection conn, String roomid) {
     // Get index of the room to delete. If the user sent a bogus room then the getRoomIndex method will return -1.
     JSONWriter jsonBuild1 = new JSONWriter();
@@ -370,24 +374,15 @@ public class Server {
       }
       // Else the requesting client is NOT the owner and thus doesn't have permission to delete.
       else {
-//        String deleteErrorMessage = ANSI_RED+"You are not the owner of "+roomid+" and so do not have permission to delete it. Nice try, though!"+ANSI_RESET;
-//        String deleteErrorMessageJSON = jsonBuild1.buildJSON(deleteErrorMessage, "Server");
-//        System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
-//        System.out.println("DeleteError JSON: " + deleteErrorMessageJSON);
-//        conn.sendMessage(deleteErrorMessageJSON + "\n");
         getRoomList(conn, false, null);
       }
     }
     // Else the requested room does not exist.
     else {
-//      String deleteErrorMessage = ANSI_RED+"The room you're trying to delete ("+roomid+") does not exist."+ANSI_RESET;
-//      String deleteErrorMessageJSON = jsonBuild1.buildJSON(deleteErrorMessage, "Server");
-//      System.out.format(ANSI_BLUE+"%nSending "+"JSON string(s). Check below:%n"+ANSI_RESET);
-//      System.out.println("DeleteError JSON: " + deleteErrorMessageJSON);
-//      conn.sendMessage(deleteErrorMessageJSON + "\n");
       getRoomList(conn, false, null);
     }
   }
+
 
   private synchronized void quit(ServerConnection conn, String roomID) {
     // Send RoomChange message to all clients in the room

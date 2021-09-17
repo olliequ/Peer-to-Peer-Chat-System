@@ -28,10 +28,5 @@ public class ClientMain {
             e.printStackTrace();
             System.out.println("ERROR: There was an issue parsing your input. Please try again.");
         }
-
-
-
-//        Client client = new Client("localhost", 4444);
-//        client.handle(client);
     }
 }
