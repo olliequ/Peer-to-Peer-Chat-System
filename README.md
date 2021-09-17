@@ -8,21 +8,21 @@ Name: Oliver Quarm (oquarm), Student ID: 834844
 The program consists of three main folders: base, client and server. Below is a quick rundown.
 
 ## Base    
-###Consists of:
+### Consists of:
 - ClientPackets (list of client protocols)
 - ServerPackets (list of server protocols)
 - JSONReader (used to read JSON objects via Jackson)
 - JSONWriter (used to write JSON objects)
 
 ## Client
-###Consists of:
+### Consists of:
 - ClientMain (takes in args and is used to spawn a new instance of Client)
 - Client
 - GetMessageThread (used by client to receive messages from server)
 - SendMessageThread (used by client to parse user messages. Sends messages to server.)
 
 ## Server
-###Consists of:
+### Consists of:
 - Main (takes in args and is used to spawn a new instance of Server)
 - Server
 - Room (used by Server to create new Room objects)
