@@ -6,6 +6,7 @@ public class Main {
     public static void main(String[] args) {
 
         try {
+            System.out.println("test.");
             // Check args passed into server
             if (args.length == 0) {
                 // Call server with default port
