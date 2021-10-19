@@ -1,7 +1,0 @@
-There are 2 independently executable (main) modules in our Gradle project (client and server), hence why there are 2 jar files that get constructed by shadowJar. When you run the jar in the command line, it essentially executes the main method in Server class. For example:
-
-java -jar chatclient.jar localhost -p 4000
-
-^This would start a client, and from here you could change rooms, type messages etc. in Terminal. Luke initially, instead of writing localhost, had an actual IP address. Note, the server jar would already have to be running as well! You could start it with:
-
-java -jar chatserver.jar -p 4000
