@@ -10,7 +10,18 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class Server {
+public class Peer {
+  protected Socket socket;
+
+
+  // Destination (server) socket (i.e. the peer that we have connected to)
+  protected Socket destSocket;
+  // Input and output streams from the peer (server) that we are connected to.
+  protected OutputStream ToConnectedPeer;
+  protected InputStream FromConnectedPeer;
+  private BufferedReader reader;
+
+
   private boolean acceptConnections = false;
   public static int PORT = 4444;
   private volatile List<ServerConnection> currentConnections = new ArrayList<>();
@@ -22,9 +33,9 @@ public class Server {
   public static final String ANSI_GREEN = "\u001B[32m";
   public static final String ANSI_RESET = "\u001B[0m";
 
-  public Server() {}
+  public Peer() {}
 
-  public Server(int port) {
+  public Peer(int port) {
     this.PORT = port;
   }
 
@@ -33,36 +44,62 @@ public class Server {
   protected void handle() {
     currentRooms.add(new Room("MainHall"));
 
-    // Now handle connections to the server
+    // Spawn thread to handle the peers input (user input)
+    new InputThread(this).start();
+
+
+    // Handle incoming connections to this peer.
     ServerSocket serverSocket;
     try {
-      // We want to bind serverSocket to a port. That port should accept connections within an infinite loop.
-      serverSocket = new ServerSocket(PORT);
-      System.out.printf("Currently listening on port number %d \n", PORT);
-      acceptConnections = true;           // Listen for connections -- whilst the server is up and alive.
+      // Bind serverSocket to a port.
+      serverSocket = new ServerSocket(0);            // Port 0 tells the OS to pick a random port.
+      acceptConnections = true;                          // Listen for connections -- whilst the peer is up and alive.
 
+      // This is the peers INCOMING port.
+      System.out.printf("DEBUG: Listening to incoming peer connections on port %d \n", serverSocket.getLocalPort());
+
+      // The peers port will accept incoming connections within an infinite loop.
       while (acceptConnections) {
-        // Accepted a connection. Move them to the main hall room.
+        // Accepted a connection from a peer.
         Socket socket = serverSocket.accept(); // Generate new socket based off the encompassing ServerSocket -- accept it.
-        System.out.println("\nAccepted connection from client with port number: " + socket.getPort()); // Port # of client.
+        System.out.println("\n Accepted connection from another peer with port number: " + socket.getPort()); // Port # of client.
 
-        // Assign name
-        guestCount += 1;
-        String clientName = "Guest" + guestCount;
+        // The connected peers identity is a combination of their IP address and their outgoing port number
+        String addressOfPeer = socket.getInetAddress().toString();
+        int portOfPeer = socket.getPort();
+        String clientIdentity = addressOfPeer + portOfPeer;
+        System.out.println("DEBUG: The identity of the peer that just connected to you is " + clientIdentity);
 
-        // Perform operations with the socket (client)
-        // Start a connection which will have its own thread of execution. Then we don't care about it anymore.
+        // Each peer that connects to this peer will have its own thread of execution.
         // The connection will be able to handle itself.
-        ServerConnection currentConnection = new ServerConnection(socket, clientName, "");
+        ServerConnection currentConnection = new ServerConnection(socket, clientIdentity, "");
         currentConnection.start();
         connect(currentConnection);
       }
 
     } catch (IOException e) {
-      System.out.println("Server exception occurred.");
+      System.out.println("Network exception occurred.");
       e.printStackTrace();
     }
   }
+
+  protected synchronized void connectToPeer(String destIP, int destPort) {
+    try {
+      // Attempt to establish connection to the destination IP and Port
+      this.destSocket = new Socket(destIP, destPort);
+      this.ToConnectedPeer = destSocket.getOutputStream();
+      this.FromConnectedPeer = destSocket.getInputStream();
+      this.reader = new BufferedReader(new InputStreamReader(FromConnectedPeer));
+      new GetMessageThread(this).start();
+
+    } catch (IOException e) {
+      System.out.println("Couldn't connect to peer. ");
+      e.printStackTrace();
+    }
+  }
+
+
+
 
   // Broadcast the connection of a new user.
   private synchronized void connect(ServerConnection conn) {
@@ -80,7 +117,7 @@ public class Server {
     String welcomeClient = "---> Welcome! You are connected as: "+clientIdentity+"\n---> Here's a rundown on the currently active rooms:";
     String FromServerOrNot = "Yes"; // Make this a boolean instead?
     JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
-    String serverMessage = jsonBuild.buildJSON(welcomeClient, "Server"); // Calls method that builds the JSON String.
+    String serverMessage = jsonBuild.buildJSON(welcomeClient, "Peer"); // Calls method that builds the JSON String.
     System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
     System.out.format("Welcome JSON String: %s%n", serverMessage);
     conn.sendMessage(serverMessage + ". \n");
@@ -403,7 +440,7 @@ public class Server {
         Room r = it.next();
         // While we're here, if the room has no owner AND no contents then delete it.
         if (r.getRoomOwner().equals("") && (r.getRoomContents().size() == 0) && !r.getRoomName().equals("MainHall")) {
-          System.out.println("Server to delete room: " + r.getRoomName() + " as it is empty with no owner.");
+          System.out.println("Peer to delete room: " + r.getRoomName() + " as it is empty with no owner.");
           it.remove();
         }
       }
@@ -442,9 +479,9 @@ public class Server {
       connectionAlive = true;
       // Below tells the new client where it is. The line below that will inform the other clients. TODO: ***Not being received atm.
       String msg = "---> "+identity+", has entered "+currentRooms.get(roomIndex).getRoomName()+". Be nice!";
-      broadcastRoom(msg, roomID, this, "Server", false);
+      broadcastRoom(msg, roomID, this, "Peer", false);
 
-      // Server sends NewIdentity JSON to client to give it its initial username (e.g. guestXXXXX).
+      // Peer sends NewIdentity JSON to client to give it its initial username (e.g. guestXXXXX).
       JSONWriter jsonBuild = new JSONWriter();
       String newIDMessage = jsonBuild.buildJSONNewID("", identity);
       sendMessage(newIDMessage + "\n");
@@ -483,7 +520,7 @@ public class Server {
               String newIdentityMessage = changeIdentity(this, newIdentity, isValidIdentity);
               if (isValidIdentity) {
                 System.out.format("Valid CI JSON: %s%n", newIdentityMessage);
-                broadcastRoom(newIdentityMessage, roomID, null, "Server", true);
+                broadcastRoom(newIdentityMessage, roomID, null, "Peer", true);
               }
             }
 
@@ -520,7 +557,7 @@ public class Server {
               // If it doesn't, send an error message.
               else {
                 String whoErrorMessage = "The room you're inquiring about ("+whoRoom+") doesn't exist. Try again.";
-                String serverMessageJSON = jsonBuild.buildJSON(whoErrorMessage, "Server");
+                String serverMessageJSON = jsonBuild.buildJSON(whoErrorMessage, "Peer");
                 System.out.format("%nSending "+"JSON string(s). Check below:%n");
                 System.out.println("WrongWho JSON: " + serverMessageJSON);
                 this.sendMessage(serverMessageJSON + "\n");
@@ -581,7 +618,7 @@ public class Server {
           }
           // While we're here, if the room has no owner AND no contents then delete it.
           if (r.getRoomOwner().equals("") && (r.getRoomContents().size() == 0) && !r.getRoomName().equals("MainHall")) {
-            System.out.println("Server to delete room: " + r.getRoomName());
+            System.out.println("Peer to delete room: " + r.getRoomName());
             it.remove();
           }
         }

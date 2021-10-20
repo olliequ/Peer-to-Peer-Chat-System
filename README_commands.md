@@ -7,7 +7,7 @@
 Stores the output
 
 ```sh
-server/target/lib/server.jar
+peer/target/lib/peer.jar
 client/target/lib/client.jar
 ```
 
