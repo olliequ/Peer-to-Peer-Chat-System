@@ -12,8 +12,6 @@ import java.util.List;
 
 public class Peer {
   protected Socket socket;
-
-
   // Destination (server) socket (i.e. the peer that we have connected to)
   protected Socket destSocket;
   // Input and output streams from the peer (server) that we are connected to.
@@ -21,53 +19,69 @@ public class Peer {
   protected InputStream FromConnectedPeer;
   private BufferedReader reader;
 
+  // All peers can be clients. These variables is used by InputThread and GetMessageThread
+  protected boolean clientListCmdStatus = true;
+  protected boolean connectionEstablishedWithServer = false;      // True when we are connected to another peer.
 
+  // All peers can be servers. A peer must establish their own server identity.
+  protected String serverIdentity;
   private boolean acceptConnections = false;
-  public static int PORT = 4444;
+
+  // As a server we maintain a list of connections and a list of rooms we are aware of.
   private volatile List<ServerConnection> currentConnections = new ArrayList<>();
   private volatile List<Room> currentRooms = new ArrayList<>();
-  private int guestCount = 0;                   // Used to identify new users. E.g. "guest5 has joined the server".
-  public static final String ANSI_RED = "\u001B[31m";
-  public static final String ANSI_BLUE = "\u001B[34m";
-  public static final String ANSI_CYAN = "\u001B[36m";
-  public static final String ANSI_GREEN = "\u001B[32m";
-  public static final String ANSI_RESET = "\u001B[0m";
 
+  // Old code from A1
+  public static int PORT = 4444;
+
+  // Currently in use by main
   public Peer() {}
 
+  // Not in use at the moment.
   public Peer(int port) {
     this.PORT = port;
   }
 
 
-  // Listen for new connections and create the initial room.
+  /** Handle Method
+   * Spawns an InputThread for the 'client' (similar to SendMessageThread).
+   * Spawns an infinite while loop to accept incoming connections. Assign identities to these connections from their
+   * socket information.
+   */
   protected void handle() {
-    currentRooms.add(new Room("MainHall"));
-
     // Spawn thread to handle the peers input (user input)
     new InputThread(this).start();
-
 
     // Handle incoming connections to this peer.
     ServerSocket serverSocket;
     try {
-      // Bind serverSocket to a port.
-      serverSocket = new ServerSocket(0);            // Port 0 tells the OS to pick a random port.
-      acceptConnections = true;                          // Listen for connections -- whilst the peer is up and alive.
+      // Bind serverSocket to a port. We're using port 0 so that the OS will pick a random port.
+      serverSocket = new ServerSocket(0);
+      acceptConnections = true;
 
+      // From my understanding there are two ports. An INCOMING and an OUTGOING port.
       // This is the peers INCOMING port.
       System.out.printf("DEBUG: Listening to incoming peer connections on port %d \n", serverSocket.getLocalPort());
 
+      // All peers can be 'servers'. We need to establish our own identity. TODO: Unsure if this is correct.
+      serverIdentity = serverSocket.getInetAddress().toString() + ":" + serverSocket.getLocalPort();
+
+      // Testing purposes: create a test room
+      currentRooms.add(new Room("TestRoom", serverIdentity));
+
+
       // The peers port will accept incoming connections within an infinite loop.
       while (acceptConnections) {
-        // Accepted a connection from a peer.
-        Socket socket = serverSocket.accept(); // Generate new socket based off the encompassing ServerSocket -- accept it.
-        System.out.println("\n Accepted connection from another peer with port number: " + socket.getPort()); // Port # of client.
+        // Accepted a connection from a peer. Generate new socket based off the encompassing ServerSocket -- accept it.
+        Socket socket = serverSocket.accept();
+
+        // Note that the port number we received is the clients OUTGOING port.
+        System.out.println("\n Accepted connection from another peer with port number: " + socket.getPort());
 
         // The connected peers identity is a combination of their IP address and their outgoing port number
         String addressOfPeer = socket.getInetAddress().toString();
         int portOfPeer = socket.getPort();
-        String clientIdentity = addressOfPeer + portOfPeer;
+        String clientIdentity = addressOfPeer + ':' + portOfPeer;
         System.out.println("DEBUG: The identity of the peer that just connected to you is " + clientIdentity);
 
         // Each peer that connects to this peer will have its own thread of execution.
@@ -83,6 +97,11 @@ public class Peer {
     }
   }
 
+  /**
+   * Used by the connect command from InputThread. Allows a user to connect to another peer.
+   * @param destIP              Currently using 'localhost'. TODO: Unsure if this is correct.
+   * @param destPort            Port number of the peer we want to connect to.
+   */
   protected synchronized void connectToPeer(String destIP, int destPort) {
     try {
       // Attempt to establish connection to the destination IP and Port
@@ -114,17 +133,17 @@ public class Peer {
 
   // Display a welcome message to the new user along with list of current rooms.
   private void welcome(String clientIdentity, ServerConnection conn) {
-    String welcomeClient = "---> Welcome! You are connected as: "+clientIdentity+"\n---> Here's a rundown on the currently active rooms:";
+    String welcomeClient = "---> Welcome! You are connected as: " + clientIdentity + "\n";
     String FromServerOrNot = "Yes"; // Make this a boolean instead?
     JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
-    String serverMessage = jsonBuild.buildJSON(welcomeClient, "Peer"); // Calls method that builds the JSON String.
+    String serverMessage = jsonBuild.buildJSON(welcomeClient, serverIdentity); // Calls method that builds the JSON String.
     System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
     System.out.format("Welcome JSON String: %s%n", serverMessage);
     conn.sendMessage(serverMessage + ". \n");
 
-    for (Room room: currentRooms) {
-      getRoomList(conn, false, null);
-    }
+//    for (Room room: currentRooms) {
+//      getRoomList(conn, false, null);
+//    }
   }
 
   // Rooms are strings that are stored in an arraylist. To access a particular room we need its index in the array.
@@ -294,7 +313,7 @@ public class Peer {
 
 
   // Method used for the RoomList protocol. Second and third parameter optional.
-  private synchronized void getRoomList(ServerConnection conn, boolean createModifiedList, String newRoomID) {
+  protected synchronized void getRoomList(ServerConnection conn, boolean createModifiedList, String newRoomID) {
     List<String> roomContents = new ArrayList<String>();
     ArrayList<ArrayList<String>> roomInformation = new ArrayList<>();
 
@@ -477,9 +496,10 @@ public class Peer {
     public void run() {
       // Manage the connection here
       connectionAlive = true;
+      String msg;
       // Below tells the new client where it is. The line below that will inform the other clients. TODO: ***Not being received atm.
-      String msg = "---> "+identity+", has entered "+currentRooms.get(roomIndex).getRoomName()+". Be nice!";
-      broadcastRoom(msg, roomID, this, "Peer", false);
+      //String msg = "---> "+identity+", has entered "+currentRooms.get(roomIndex).getRoomName()+". Be nice!";
+      //broadcastRoom(msg, roomID, this, "Peer", false);
 
       // Peer sends NewIdentity JSON to client to give it its initial username (e.g. guestXXXXX).
       JSONWriter jsonBuild = new JSONWriter();
@@ -488,7 +508,7 @@ public class Peer {
 
       // Welcome the user (show current rooms) and then move them to MainHall.
       welcome(identity, this); // Generates a welcome JSON string message and flushes it to the client, which will post it on the client's screen.
-      joinRoom(this, "", "MainHall");
+      //joinRoom(this, "", "MainHall");
 
       while (connectionAlive) {
         try {

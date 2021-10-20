@@ -8,6 +8,19 @@ public class Main {
         Peer peer = new Peer();
         peer.handle();
 
+
+
+
+
+        // Todo for submission
+        /**
+         * Main should be executed from the command line
+         * Usage:   java -jar chatpeer.jar [-p port] [-i port]
+         * See slide 29
+         */
+
+
+        // OLD CODE
 //        try {
 //            // Check args passed into server
 //            if (args.length == 0) {
@@ -26,6 +39,5 @@ public class Main {
 //            e.printStackTrace();
 //            System.out.println("ERROR: There was an issue parsing your input. Please try again.");
 //        }
-
     }
 }
