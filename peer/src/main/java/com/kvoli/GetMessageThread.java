@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class GetMessageThread extends Thread {
     private Peer peer;
@@ -29,6 +30,8 @@ public class GetMessageThread extends Thread {
                     jRead.readInput(in);
                     String protocol = "null";
 
+                    System.out.println("DEBUG Server Text:  " + in);
+
                     // If we've received some form of input then we've established a connection.
                     this.peer.connectionEstablishedWithServer = true;
 
@@ -42,13 +45,34 @@ public class GetMessageThread extends Thread {
                     if (protocol.equals("message")) {
                         String content = jRead.getJSONContent();
                         String incomingIdentity = jRead.getJSONIdentity();
-
                         System.out.println(incomingIdentity + ": " + content);
                     }
 
+                    // Adopted from A1 but heavily dumbed down.
                     else if (protocol.equals("roomlist")) {
-                        System.out.println(in);
+                        ArrayList<String> rooms = jRead.getJSONRooms();
+                        ArrayList<String> localRooms = new ArrayList<String>();
 
+                        for (String room : rooms) {
+                            String roomName = jRead.getJSONRoomName(room);
+                            String roomCount = jRead.getJSONRoomCount(room);
+                            System.out.println("Room: " + roomName + " with " + roomCount + " users.");
+                        }
+                    }
+
+                    else if (protocol.equals("roomchange")) {
+                        String identity = jRead.getJSONIdentity();
+                        String former = jRead.getJSONFormerIdentity();
+                        String roomid = jRead.getJSONRoomId();
+                        boolean validChange = false;
+
+                        if (former.equals("")) {
+                            System.out.println(identity + " moves to " + roomid);
+                            validChange = true;
+                        }
+                        else {
+                            System.out.println(identity + " moved from " + former + " to " + roomid);
+                        }
                     }
 
 

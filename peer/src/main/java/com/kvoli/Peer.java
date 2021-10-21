@@ -22,6 +22,7 @@ public class Peer {
   // All peers can be clients. These variables is used by InputThread and GetMessageThread
   protected boolean clientListCmdStatus = true;
   protected boolean connectionEstablishedWithServer = false;      // True when we are connected to another peer.
+  protected String clientCurrentRoom;
 
   // All peers can be servers. A peer must establish their own server identity.
   protected String serverIdentity;
@@ -67,7 +68,8 @@ public class Peer {
       serverIdentity = serverSocket.getInetAddress().toString() + ":" + serverSocket.getLocalPort();
 
       // Testing purposes: create a test room
-      currentRooms.add(new Room("TestRoom", serverIdentity));
+      clientCurrentRoom = "";
+      currentRooms.add(new Room("tr", serverIdentity));
 
 
       // The peers port will accept incoming connections within an infinite loop.
@@ -97,8 +99,17 @@ public class Peer {
     }
   }
 
+
+  // TIP: Use ALT + 7 in IJ to view all methods on the sidebar.
+  // ***************************************************************************************************************
+  // ***************************************************************************************************************
+  // ***********************************     NEW METHODS FOR ASSIGNMENT 2     **************************************
+  // ***************************************************************************************************************
+
+
   /**
    * Used by the connect command from InputThread. Allows a user to connect to another peer.
+   * NEW IN A2
    * @param destIP              Currently using 'localhost'. TODO: Unsure if this is correct.
    * @param destPort            Port number of the peer we want to connect to.
    */
@@ -119,6 +130,141 @@ public class Peer {
 
 
 
+  /**
+   * If a server is acting as a client in their own room (i.e they type a message) then we need to broadcast it to
+   * the other users.
+   * We can't use the original broadcastRoom method from A1 because a server peer doesn't have a ServerConnection to themself.
+   * NEW IN A2
+   */
+  protected synchronized void broadcastAsServer(String message) {
+    String identity = serverIdentity;
+
+    for (ServerConnection c: currentConnections) {
+      if (c.roomID.equals(clientCurrentRoom)) {
+        JSONWriter jsonBuild = new JSONWriter();
+        String serverMessage = jsonBuild.buildJSON(message, identity);
+        //System.out.format("%nSending "+"JSON string(s). Check below:%n");
+        //System.out.println("BroadcastRoom JSON: " + serverMessage);
+        // Now broadcast the JSON string to everyone in the room.
+        c.sendMessage(serverMessage + "\n");
+      }
+    }
+  }
+
+
+
+  /**
+   * Method to get local room list.
+   * This is used for when we're not connected to anybody but we're hosting a few rooms of our own.
+   * NEW IN A2
+   */
+  protected synchronized void getLocalRoomList() {
+    for (Room r: currentRooms) {
+      System.out.println(r.getRoomOwner());
+      System.out.println(r.getRoomName() + " " + r.getRoomSize() + " users");
+    }
+  }
+
+
+
+  /**
+   * Method to allow a peer to join local rooms when NOT connected to a remote peer.
+   * For the purposes of this project we need to have two join room methods since a peer can be a server/client.
+   * If I am not connected to someone I still need to be able to "connect" to a room that ive created.
+   * NEW IN A2
+   *
+   * @param oldRoom
+   * @param newRoom
+   */
+  protected synchronized void joinLocalRoom(String oldRoom, String newRoom) {
+    JSONWriter jsonBuild = new JSONWriter();
+
+    String identity = serverIdentity;
+
+    // First check if the new 'room' is even valid.
+    boolean newRoomIsValid = false;
+    for (Room r: currentRooms) {
+      if (r.getRoomName().equals(newRoom)) {
+        newRoomIsValid = true;
+        r.addUser(identity); // Room is valid, so let's add the user to this new room.
+        System.out.println(identity + " moved to " + newRoom);
+        clientCurrentRoom = newRoom;
+        break;
+      }
+    }
+    // Remove the peer from their old room
+    if (newRoomIsValid) {
+      for (Room r: currentRooms) {
+        if (r.getRoomName().equals(oldRoom)) {
+          r.removeUser(identity);
+        }
+      }
+    }
+    if (!newRoomIsValid) {
+      System.out.println("The room you wanted to move to was invalid. ");
+    }
+
+    else {
+      // Now if a peer happened to connect to us and join our local room before we moved to it then we must broadcast
+      // our room movement to them.
+      // This is based off the broadcast function from A1.
+      for (ServerConnection c : currentConnections) {
+        if (c.roomID.equals(newRoom)) {
+          String serverMessage = jsonBuild.buildJSONJoinRoom(identity, oldRoom, newRoom);
+          c.sendMessage(serverMessage + "\n");
+        }
+      }
+    }
+  }
+
+
+
+  /**
+   * A server can act as a client. As such, they need to be able to create their own rooms.
+   * NEW IN A2
+   *
+   * @param newRoomID
+   * @param ownerIdentity
+   */
+  protected synchronized void createLocalRoom (String newRoomID, String ownerIdentity) {
+    // Verify the new room id, and ensure new identity is alphanumeric and between 3 - 16 characters.
+    boolean alreadyExists = false; // Check if the room already exists. Update the flag if it does.
+    for (Room r: currentRooms) {
+      if (r.getRoomName().equals(newRoomID)) {
+        alreadyExists = true;
+      }
+    }
+
+    // Check if the room exists or if it has an invalid name.
+    if (alreadyExists || (!newRoomID.matches("[A-Za-z0-9]+") || (newRoomID.length() < 3) || ((newRoomID).length()) > 32)) {
+      System.out.println("Room creation was not successful. Room already or exists or is invalid.");
+    }
+
+    // Otherwise, handle room creation.
+    else {
+      currentRooms.add(new Room(newRoomID, ownerIdentity));
+      System.out.println("Successfully created room " + newRoomID);
+    }
+  }
+
+
+
+  private synchronized void readMessage(String roomID, String msgContent, String msgIdentity) {
+    // If the server is in the same room as the sender then they should be able to read the message
+    if (clientCurrentRoom.equals(roomID)) {
+      System.out.println(msgIdentity + ": " + msgContent);
+    }
+  }
+
+
+
+
+  // ***************************************************************************************************************
+  // ***************************************************************************************************************
+  // ***************************************************************************************************************
+  // ***************************************************************************************************************
+  // ***********************************     OLD METHODS FROM ASSIGNMENT 1     *************************************
+  // ***************************************************************************************************************
 
   // Broadcast the connection of a new user.
   private synchronized void connect(ServerConnection conn) {
@@ -172,6 +318,7 @@ public class Peer {
   }
 
 
+
   /**
    * New method to broadcast to users within the same room as the messenger.
    * @param message   User message
@@ -189,8 +336,8 @@ public class Peer {
            */
           JSONWriter jsonBuild = new JSONWriter();
           String serverMessage = jsonBuild.buildJSON(message, ID);
-          System.out.format("%nSending "+"JSON string(s). Check below:%n");
-          System.out.println("BroadcastRoom JSON: " + serverMessage);
+          //System.out.format("%nSending "+"JSON string(s). Check below:%n");
+          //System.out.println("BroadcastRoom JSON: " + serverMessage);
           // Now broadcast the JSON string to everyone in the room.
           c.sendMessage(serverMessage + "\n");
         }
@@ -258,8 +405,8 @@ public class Peer {
   }
 
 
-  // Method to allow a client to join a room.
-  private synchronized void joinRoom(ServerConnection conn, String oldRoom, String newRoom) {
+  // Method to allow a peer to join a room hosted by a remote peer.
+  protected synchronized void joinRoom(ServerConnection conn, String oldRoom, String newRoom) {
     // First check if the new 'room' is even valid.
     boolean newRoomIsValid = false;
     for (Room r: currentRooms) {
@@ -274,10 +421,20 @@ public class Peer {
     // Logic to handle new clients. By default, a new-joining client's 'old room' is just an empty string.
     if (newRoomIsValid && oldRoom.equals("")) {
       JSONWriter jsonBuild = new JSONWriter();
+      //String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, oldRoom, newRoom);
+      //String newRoomContents = getRoomContents(conn, newRoom);
+      //broadcastRoom(serverMessage, "MainHall", null, conn.identity, true);
+      //conn.sendMessage(newRoomContents + "\n");
+
+
+      // Send RoomChange message to client and all other clients in the room
       String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, oldRoom, newRoom);
-      String newRoomContents = getRoomContents(conn, newRoom);
-      broadcastRoom(serverMessage, "MainHall", null, conn.identity, true);
-      conn.sendMessage(newRoomContents + "\n");
+      System.out.println(serverMessage);
+      System.out.println(conn.identity + " moved to " + newRoom);
+      //broadcastRoom(serverMessage, newRoom, null, conn.identity, true);
+      conn.sendMessage(serverMessage + "\n");
+
+
     }
 
     // Logic to remove an existing client from their old room.
@@ -310,6 +467,7 @@ public class Peer {
       conn.sendMessage(serverMessage + "\n");
     }
   }
+
 
 
   // Method used for the RoomList protocol. Second and third parameter optional.
@@ -370,6 +528,7 @@ public class Peer {
     // Return to the calling client
     return roomContentsMsg;
   }
+
 
 
   private synchronized void createNewRoom(ServerConnection conn, String newRoomID) {
@@ -453,6 +612,7 @@ public class Peer {
   }
 
 
+
   private synchronized void closeRooms(ServerConnection conn) {
     try {
       for (Iterator<Room> it = currentRooms.iterator(); it.hasNext(); ) {
@@ -467,6 +627,8 @@ public class Peer {
       System.out.println("Exception raised when closing rooms. ");
     }
   }
+
+
 
   /**
    * All current clients have a 'ServerConnection' which is used to listen to each client.
@@ -520,34 +682,26 @@ public class Peer {
             JSONReader jRead = new JSONReader();
             jRead.readInput(in);
             String type = jRead.getJSONType();   // Extract the value from the 'type' key field.
-            System.out.format("%nReceived "+"JSON string of type: %s. It is below:%n", type);
+            System.out.format("%nDEBUG: Received "+"JSON string of type: %s. ", type);
+            System.out.println();
 
-            /**
-             * The below if-else statements analyse the received JSON object type, and act accordingly.
-             */
+            // The below if-else statements analyse the received JSON object type, and act accordingly.
 
-            if (type.equals("message")) {
-              //broadcastRoom(msg, roomID, this, identity, false);     // "this" -> ignore ourselves in the broadcast
-              System.out.format("Message JSON: %s%n", in);
+            // When we receive a standard message we need to check if the sender is in a room.
+            if (type.equals("message") && (!roomID.equals(""))) {
+              // Again, a server can be a client. As such they should be able to read a message they receive
+              // as long as they are in the same room as the sender.
+              readMessage(roomID, jRead.getJSONContent(), identity);
+
+              // Regardless, the server should broadcast that message to everyone else in the room
               broadcastRoom(msg, roomID, null, identity, false);     // "this" -> ignore ourselves in the broadcast
             }
 
-            else if (type.equals("identitychange")) {
-              System.out.format("Raw IC JSON: %s%n", in);
-              String oldIdentity = identity;
-              String newIdentity = jRead.getJSONIdentity();
-              boolean isValidIdentity = verifyIdentity(this, newIdentity);
-              String newIdentityMessage = changeIdentity(this, newIdentity, isValidIdentity);
-              if (isValidIdentity) {
-                System.out.format("Valid CI JSON: %s%n", newIdentityMessage);
-                broadcastRoom(newIdentityMessage, roomID, null, "Peer", true);
-              }
-            }
 
             else if (type.equals("join")) {
               System.out.format("JoinRoom JSON: %s%n", in);
               String newRoom = jRead.getJSONRoomId();
-              System.out.println("Note: User is attempting to join '" + newRoom+"'.");
+              //System.out.println("DEBUG: Peer is attempting to join '" + newRoom+"'.");
               String currentRoom = roomID;
               joinRoom(this, currentRoom, newRoom);
             }
@@ -617,7 +771,7 @@ public class Peer {
 
       if (!gracefulDisconnection) {
         // If client didn't disconnect via #quit then force close the connection.
-        System.out.println("NOT GRACEFUL");
+        System.out.println("DEBUG: Someone abruptly disconnected from you.");
         quit(this, roomID);
       }
     }
@@ -643,7 +797,6 @@ public class Peer {
           }
         }
 
-        currentRooms.get(getRoomIndex(roomID)).setRoomOwner("");
         currentRooms.get(getRoomIndex(roomID)).removeUser(identity);
         disconnect(this);
         reader.close();

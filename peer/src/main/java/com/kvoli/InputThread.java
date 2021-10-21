@@ -64,19 +64,65 @@ public class InputThread extends Thread {
 
             }
 
-            else if (text.contains("#list") && peer.connectionEstablishedWithServer) {
+            else if (text.contains("#list")) {
                 ClientPackets.List listRoom = new ClientPackets.List();
                 this.peer.clientListCmdStatus = true;
 
-                String msg = jWrite.buildListMsg(listRoom);
-                writer.println(msg);
-                writer.flush();
+                // If we're not connected to anybody we should be able to issue a local list command to ourselves
+                // to reveal the rooms that we are currently maintaining.
+                if (!peer.connectionEstablishedWithServer) {
+                    peer.getLocalRoomList();
+                }
+                else {
+                    String msg = jWrite.buildListMsg(listRoom);
+                    writer.println(msg);
+                    writer.flush();
+                }
+            }
 
+            else if (text.contains("#create")) {
+                String input = text.replaceAll("#create", "");
+                input = input.stripLeading();
 
+                peer.createLocalRoom(input, peer.serverIdentity);
 
+            }
 
+            else if (text.contains("#join")) {
+                String input = text.replaceAll("#join", "");
+                input = input.stripLeading();
 
+                // We don't need to be connected to someone else to join our own room.
+                if (!peer.connectionEstablishedWithServer) {
+                    peer.joinLocalRoom(peer.clientCurrentRoom, input);
 
+                }
+
+                else {
+                    // Otherwise
+                    ClientPackets.Join joinRoom = new ClientPackets.Join(input);
+                    String msg = jWrite.buildJoinMsg(joinRoom);
+                    writer.println(msg);
+                    writer.flush();
+                }
+            }
+
+            // Input is not a command therefore it must be a message.
+            else {
+                // Condition for if we're connected to the 'server' peer
+                if (!text.equals("") && peer.connectionEstablishedWithServer) {
+                    // Wrap this input into JSON.
+                    ClientPackets.Message message = new ClientPackets.Message(text);
+                    String msg = jWrite.buildMessage(message);
+                    System.out.println("SENT: " + msg);
+                    writer.println(msg);
+                    writer.flush();
+                }
+
+                // Condition for if WE are the 'server' peer, hence we are not connected to a 'server'.
+                else if (!text.equals("")) {
+                    peer.broadcastAsServer(text);
+                }
             }
 
 
