@@ -65,10 +65,10 @@ public class Peer {
 
       // All peers can be 'servers'. We need to establish our own identity. TODO: Unsure if this is correct.
       serverIdentity = serverSocket.getInetAddress().toString() + ":" + serverSocket.getLocalPort();
+      System.out.println(serverIdentity);
 
       // Testing purposes: create a test room
       currentRooms.add(new Room("TestRoom", serverIdentity));
-
 
       // The peers port will accept incoming connections within an infinite loop.
       while (acceptConnections) {
