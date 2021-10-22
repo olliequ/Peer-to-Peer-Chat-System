@@ -31,7 +31,7 @@ public class InputThread extends Thread {
 
     @Override
     public void run() {
-        System.out.println("Welcome. Please issue a command. ");
+        System.out.println("Welcome. Please issue a command.");
         while (getUserInput) {
             JSONWriter jWrite = new JSONWriter();
             String text = "";
@@ -49,19 +49,21 @@ public class InputThread extends Thread {
                 writer = new PrintWriter(peer.ToConnectedPeer, true);
             }
 
-
             // Command parsing
             if (text.contains("#connect")) {
                 String input = text.replaceAll("#connect", "");
                 input = input.stripLeading();
+                if (input == "") {
+                    System.out.println("You need to enter an IP address and Port Number. You can't connect to nothing!");
+                }
+                else {
+                    // TODO: destination IP is currently hardcoded to make testing easier.
+                    String destIP = "localhost";
+                    int destPort = Integer.parseInt(input);
 
-                // TODO: destination IP is currently hardcoded to make testing easier.
-                String destIP = "localhost";
-                int destPort = Integer.parseInt(input);
-
-                System.out.println("DEBUG: Trying to connect to " + destIP + " " + destPort);
-                peer.connectToPeer(destIP, destPort);
-
+                    System.out.println("DEBUG: Trying to connect to " + destIP + " " + destPort);
+                    peer.connectToPeer(destIP, destPort);
+                }
             }
 
             else if (text.contains("#list")) {

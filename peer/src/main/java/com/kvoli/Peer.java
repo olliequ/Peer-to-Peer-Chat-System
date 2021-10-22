@@ -19,7 +19,7 @@ public class Peer {
   protected InputStream FromConnectedPeer;
   private BufferedReader reader;
 
-  // All peers can be clients. These variables is used by InputThread and GetMessageThread
+  // All peers can be clients. These variables are used by InputThread and GetMessageThread
   protected boolean clientListCmdStatus = true;
   protected boolean connectionEstablishedWithServer = false;      // True when we are connected to another peer.
   protected String clientCurrentRoom;
@@ -78,13 +78,13 @@ public class Peer {
         Socket socket = serverSocket.accept();
 
         // Note that the port number we received is the clients OUTGOING port.
-        System.out.println("\n Accepted connection from another peer with port number: " + socket.getPort());
+        System.out.println("\n---> Accepted connection from another peer with port number: " + socket.getPort());
 
         // The connected peers identity is a combination of their IP address and their outgoing port number
         String addressOfPeer = socket.getInetAddress().toString();
         int portOfPeer = socket.getPort();
         String clientIdentity = addressOfPeer + ':' + portOfPeer;
-        System.out.println("DEBUG: The identity of the peer that just connected to you is " + clientIdentity);
+        System.out.println("     The identity of the peer that just connected to you is " + clientIdentity);
 
         // Each peer that connects to this peer will have its own thread of execution.
         // The connection will be able to handle itself.
@@ -98,7 +98,6 @@ public class Peer {
       e.printStackTrace();
     }
   }
-
 
   // TIP: Use ALT + 7 in IJ to view all methods on the sidebar.
   // ***************************************************************************************************************
@@ -249,17 +248,12 @@ public class Peer {
     }
   }
 
-
-
   private synchronized void readMessage(String roomID, String msgContent, String msgIdentity) {
     // If the server is in the same room as the sender then they should be able to read the message
     if (clientCurrentRoom.equals(roomID)) {
       System.out.println(msgIdentity + ": " + msgContent);
     }
   }
-
-
-
 
   // ***************************************************************************************************************
   // ***************************************************************************************************************
@@ -642,7 +636,7 @@ public class Peer {
 
       while (connectionAlive) {
         try {
-          // While the connection is alive we wait and listen to their socket, reading in JSON objects as they arrive.
+          // While the connection is alive we wait and listen to their socket, reading in JSON objects from the socket as they arrive.
           String in = reader.readLine();
           JSONReader read = new JSONReader();
           msg = read.readMSg(in);
