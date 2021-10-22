@@ -17,6 +17,11 @@ public class InputThread extends Thread {
     private Socket socket;
     private boolean getUserInput = true;
     //private String clientID;
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_RESET = "\u001B[0m";
 
     public InputThread(Peer peer) {
         this.peer = peer;
@@ -29,7 +34,7 @@ public class InputThread extends Thread {
 
     @Override
     public void run() {
-        System.out.println("Welcome. Please issue a command.");
+        System.out.println("----------------\n"+ANSI_BLUE+"Welcome! Please issue a command."+ANSI_RESET);
         while (getUserInput) {
             JSONWriter jWrite = new JSONWriter();
             String text = "";
@@ -51,17 +56,19 @@ public class InputThread extends Thread {
             if (text.contains("#connect")) {
                 String input = text.replaceAll("#connect", "");
                 input = input.stripLeading();
+                String destIP = "localhost";   // TODO: destination IP is currently hardcoded to make testing easier.
                 if (input == "") {
                     System.out.println("You need to enter an IP address and Port Number. You can't connect to nothing!");
                 }
-                // TODO: destination IP is currently hardcoded to make testing easier.
-                String destIP = "localhost";
-                try {
-                    int destPort = Integer.parseInt(input);
-                    System.out.println("DEBUG: Trying to connect to " + destIP + " " + destPort);
-                    peer.connectToPeer(destIP, destPort);
-                } catch (Exception e) {
-                    System.out.println("Invalid input (parseInt error)");
+                else {
+                    try {
+                        int destPort = Integer.parseInt(input);
+                        System.out.println("---> Attempting to connect to: " + destIP + " " + destPort);
+                        peer.connectToPeer(destIP, destPort);
+                        System.out.println(ANSI_GREEN+"Connection successful."+ANSI_RESET);
+                    } catch (Exception e) {
+                        System.out.println("Invalid input (parseInt error)");
+                    }
                 }
             }
 

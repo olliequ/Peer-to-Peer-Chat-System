@@ -31,6 +31,12 @@ public class Peer {
   // As a server we maintain a list of connections and a list of rooms we are aware of.
   private volatile List<ServerConnection> currentConnections = new ArrayList<>();
   private volatile List<Room> currentRooms = new ArrayList<>();
+  public static final String ANSI_RED = "\u001B[31m";
+  public static final String ANSI_BLUE = "\u001B[34m";
+  public static final String ANSI_CYAN = "\u001B[36m";
+  public static final String ANSI_GREEN = "\u001B[32m";
+  public static final String ANSI_YELLOW = "\u001B[33m";
+  public static final String ANSI_RESET = "\u001B[0m";
 
   // Old code from A1
   public static int PORT = 4444;
@@ -62,11 +68,11 @@ public class Peer {
 
       // From my understanding there are two ports. An INCOMING and an OUTGOING port.
       // This is the peers INCOMING port.
-      System.out.printf("DEBUG: Listening to incoming peer connections on port %d \n", serverSocket.getLocalPort());
+      System.out.printf("Listening to incoming peer connections on port "+ANSI_YELLOW+"%d.\n"+ANSI_RESET, serverSocket.getLocalPort());
 
       // All peers can be 'servers'. We need to establish our own identity. TODO: Unsure if this is correct.
       serverIdentity = serverSocket.getInetAddress().toString() + ":" + serverSocket.getLocalPort();
-      System.out.println(serverIdentity);
+      System.out.println("This peer's identity is: "+ANSI_YELLOW+serverIdentity+ANSI_RESET+"\n----------------");
 
       // Testing purposes: create a test room
       clientCurrentRoom = "";
@@ -78,13 +84,13 @@ public class Peer {
         Socket socket = serverSocket.accept();
 
         // Note that the port number we received is the clients OUTGOING port.
-        System.out.println("\n---> Accepted connection from another peer with port number: " + socket.getPort());
+        System.out.println(ANSI_CYAN+"\n---> Accepted connection from another peer with port number: "+ANSI_RESET+ socket.getPort());
 
-        // The connected peers identity is a combination of their IP address and their outgoing port number
+        // The connected peer's identity is a combination of their IP address and their outgoing port number
         String addressOfPeer = socket.getInetAddress().toString();
         int portOfPeer = socket.getPort();
         String clientIdentity = addressOfPeer + ':' + portOfPeer;
-        System.out.println("     The identity of the peer that just connected to you is " + clientIdentity);
+        System.out.println("\t- The identity of the peer that just connected to you is: " + clientIdentity);
 
         // Each peer that connects to this peer will have its own thread of execution.
         // The connection will be able to handle itself.
@@ -105,7 +111,6 @@ public class Peer {
   // ***********************************     NEW METHODS FOR ASSIGNMENT 2     **************************************
   // ***************************************************************************************************************
 
-
   /**
    * Used by the connect command from InputThread. Allows a user to connect to another peer.
    * NEW IN A2
@@ -122,12 +127,10 @@ public class Peer {
       new GetMessageThread(this).start();
 
     } catch (IOException e) {
-      System.out.println("Couldn't connect to peer. ");
+      System.out.println("Couldn't connect to peer.");
       e.printStackTrace();
     }
   }
-
-
 
   /**
    * If a server is acting as a client in their own room (i.e they type a message) then we need to broadcast it to
@@ -287,11 +290,11 @@ public class Peer {
    * @param conn
    */
   private void welcome(String identity, ServerConnection conn) {
-    String idOfClient = identity;
+    String idOfClient = "You've successfully connected to me, "+identity+".";
     JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
     String serverMessage = jsonBuild.buildJSON(idOfClient, serverIdentity); // Calls method that builds the JSON String.
     //System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
-    System.out.format("Welcome JSON String: %s%n", serverMessage);
+    System.out.format(ANSI_BLUE+"Sending Welcome JSON:"+ANSI_RESET+" %s%n", serverMessage);
     conn.sendMessage(serverMessage + ". \n");
   }
 

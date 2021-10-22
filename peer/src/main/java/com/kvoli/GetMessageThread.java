@@ -15,6 +15,9 @@ public class GetMessageThread extends Thread {
     boolean getPeerMessages = true;
     private String serverAssignedIdentity = "NULL";             // Our IP and outgoing port number
     private String myCurrentRoom = "";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_RESET = "\u001B[0m";
 
     public GetMessageThread(Peer peer) {
         this.peer = peer;
@@ -26,13 +29,13 @@ public class GetMessageThread extends Thread {
     public void run() {
         while (getPeerMessages) {
             try {
-                String in = reader.readLine();
+                String in = reader.readLine(); // Reads in JSON objects as they arrive
                 if (in != null) {
                     JSONReader jRead = new JSONReader();
                     jRead.readInput(in);
                     String protocol = "null";
 
-                    System.out.println("DEBUG Server Text:  " + in);
+                    System.out.println(ANSI_RED+"Received JSON:  "+ANSI_RESET + in);
 
                     // If we've received some form of input then we've established a connection.
                     this.peer.connectionEstablishedWithServer = true;
@@ -48,11 +51,10 @@ public class GetMessageThread extends Thread {
                         String content = jRead.getJSONContent();
                         String incomingIdentity = jRead.getJSONIdentity();
 
-
-                        // On LMS, Austen said a peers identity displayed during chat is the outgoing port.
-                        // The specification does not outline a way/commmand for us to know OUR outgoing port.
+                        // On LMS, Austen said that a peer's identity displayed during chat is the outgoing port.
+                        // The specification does not outline a way/command for us to know OUR outgoing port.
                         // Only the server we are connected to knows our outgoing port.
-                        // Thus, im using the "welcome" message that the server sends to determine our outgoing port.
+                        // Thus, I'm using the "Welcome" message that the server sends to determine our outgoing port.
 
                         // Upon initial connection the server tells us our identity (IP + outgoing port)
                         if (serverAssignedIdentity.equals("NULL")) {
@@ -67,9 +69,9 @@ public class GetMessageThread extends Thread {
                             String room = "[" + myCurrentRoom + "] ";
                             System.out.println(room + incomingIdentity + ": " + content);
                         }
-                        // Case for when its someone elses message.
+                        // Case for when it's someone else's message.
                         else {
-                            System.out.println(incomingIdentity + ": " + content);
+                            System.out.println(ANSI_YELLOW+incomingIdentity+" says: "+ANSI_RESET+ content);
                         }
                     }
 
