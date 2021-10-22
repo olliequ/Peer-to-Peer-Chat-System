@@ -87,7 +87,6 @@ public class GetMessageThread extends Thread {
 
                         // If this peer is hosting rooms locally then we should also return their local room list.
                         peer.getLocalRoomList();
-
                     }
 
                     // Used for when a peer joins another room.
@@ -123,6 +122,12 @@ public class GetMessageThread extends Thread {
                             System.out.print(person + " ");
                         }
                         System.out.println();
+                    }
+
+                    // The response of a #listneighbors command
+                    else if (protocol.equals("neighbors")) {
+                        ArrayList<String> peers = jRead.readListNeighbors();
+                        System.out.println("List of neighbors: " + peers);
                     }
 
 

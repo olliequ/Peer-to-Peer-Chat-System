@@ -101,8 +101,13 @@ public class ClientPackets {
         public Who(String roomid) {
             this.roomid = roomid;
         }
-
     }
 
+    @JsonTypeName("listneighbors")
+    public static class ListNeighbors {
+        public String type = "listneighbors";
+
+        public ListNeighbors() {}
+    }
 
 }

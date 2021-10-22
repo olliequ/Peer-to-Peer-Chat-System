@@ -104,4 +104,18 @@ public class ServerPackets {
             this.owner = owner;
         }
     }
+
+
+    @JsonTypeName("neighbors")
+    public static class Neighbors {
+        public String type = "neighbors";
+        public List<String> neighbors;
+
+        public Neighbors(List<String> neighbors) {
+            this.neighbors = neighbors;
+        }
+    }
+
+
+
 }

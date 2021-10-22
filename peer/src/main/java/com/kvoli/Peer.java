@@ -259,6 +259,49 @@ public class Peer {
   }
 
 
+  /**
+   * The server should respond with a list of peers that are currently connected to it (not including its own network
+   * address, or the address of the client that issued the request).
+   */
+  private synchronized String getListNeighbors(ServerConnection conn) {
+    // Iterate through the currentConnections array list and build a JSON string out of it.
+
+    List<String> neighbors = new ArrayList<String>();
+
+    // Do not include the calling client in the list that is returned to the calling client.
+    for (ServerConnection c: currentConnections) {
+      if (!c.identity.equals(conn.identity)) {
+        neighbors.add(c.identity);
+      }
+    }
+
+    // Wrap this array into a Neighbors JSON
+    JSONWriter jsonBuild = new JSONWriter();
+    String neighborsMsg = jsonBuild.buildJsonListNeighbors(neighbors);
+
+    // Return to the calling client
+    return neighborsMsg;
+  }
+
+
+
+  /**
+   * Send a packet to the client that discloses their identity (their outgoing port) when they initially connect to us.
+   * Only we know what their outgoing port is....unless there's another way?
+   * Uses the standard message protocol.
+   * @param identity
+   * @param conn
+   */
+  private void welcome(String identity, ServerConnection conn) {
+    String idOfClient = identity;
+    JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
+    String serverMessage = jsonBuild.buildJSON(idOfClient, serverIdentity); // Calls method that builds the JSON String.
+    //System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
+    System.out.format("Welcome JSON String: %s%n", serverMessage);
+    conn.sendMessage(serverMessage + ". \n");
+  }
+
+
 
 
   // ***************************************************************************************************************
@@ -279,27 +322,6 @@ public class Peer {
     currentConnections.remove(conn);
   }
 
-
-
-  /**
-   * Send a packet to the client that discloses their identity (their outgoing port) when they initially connect to us.
-   * Only we know what their outgoing port is....unless there's another way?
-   * Uses the standard message protocol.
-   * @param identity
-   * @param conn
-   */
-  private void welcome(String identity, ServerConnection conn) {
-    String idOfClient = identity;
-    JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
-    String serverMessage = jsonBuild.buildJSON(idOfClient, serverIdentity); // Calls method that builds the JSON String.
-    //System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
-    System.out.format("Welcome JSON String: %s%n", serverMessage);
-    conn.sendMessage(serverMessage + ". \n");
-
-//    for (Room room: currentRooms) {
-//      getRoomList(conn, false, null);
-//    }
-  }
 
   // Rooms are strings that are stored in an arraylist. To access a particular room we need its index in the array.
   private int getRoomIndex(String roomID) {
@@ -325,7 +347,6 @@ public class Peer {
       }
     }
   }
-
 
 
   /**
@@ -363,9 +384,6 @@ public class Peer {
       }
     }
   }
-
-
-
 
 
 
@@ -627,9 +645,6 @@ public class Peer {
       // Manage the connection here
       connectionAlive = true;
       String msg;
-      // Below tells the new client where it is. The line below that will inform the other clients. TODO: ***Not being received atm.
-      //String msg = "---> "+identity+", has entered "+currentRooms.get(roomIndex).getRoomName()+". Be nice!";
-      //broadcastRoom(msg, roomID, this, "Peer", false);
 
       // Peer sends NewIdentity JSON to client to give it its initial username (e.g. guestXXXXX).
       JSONWriter jsonBuild = new JSONWriter();
@@ -677,6 +692,11 @@ public class Peer {
             else if (type.equals("list")) {
               System.out.format("List JSON: %s%n", in);
               getRoomList(this, false, null);
+            }
+
+            else if (type.equals("listneighbors")) {
+              String listNeighbors = getListNeighbors(this);
+              sendMessage(listNeighbors + "\n");
             }
 
             else if (type.equals("who")) {
