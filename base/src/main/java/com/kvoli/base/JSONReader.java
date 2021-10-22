@@ -83,6 +83,16 @@ public class JSONReader {
         return roomName;
     }
 
+//    public String getJSONListNeighbor(String currentNeighbor) {
+//        try {
+//            jNode1 = oMapper.readTree(currentNeighbor);
+//        } catch (JsonProcessingException e) {
+//            System.out.println("Exception getting neighbor in jReader");
+//        }
+//        String roomName = jNode1.get("roomid").asText(); // The clean, room-name.
+//        return roomName;
+//    }
+
     public String getJSONRoomCount(String currentRoom) {
         try {
             jNode1 = oMapper.readTree(currentRoom);
@@ -109,5 +119,20 @@ public class JSONReader {
             //System.out.println("Reading exception. The message received may not have been a JSON object.");
         }
         return content;
+    }
+
+
+    public ArrayList<String> readListNeighbors() {
+        ArrayList<String> neighbors = new ArrayList<String>();
+
+        try {
+            //System.out.println(jNode.get("neighbors").asText());
+            for (JsonNode node : jNode.get("neighbors")) {
+                String current = node.asText();
+                neighbors.add(current);
+            }
+        } catch (Exception e) {}
+
+        return neighbors;
     }
 }

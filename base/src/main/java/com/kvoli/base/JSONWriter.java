@@ -214,4 +214,30 @@ public class JSONWriter {
         }
         return msg;
     }
+
+    public String buildListNeighborsMsg (ClientPackets.ListNeighbors listNeighbors) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(listNeighbors);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter buildListNeighborsMsg");
+        }
+        return msg;
+    }
+
+    public String buildJsonListNeighbors (List<String> listOfNeighbors) {
+        String serverMessage = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            ServerPackets.Neighbors neighbors = new ServerPackets.Neighbors(listOfNeighbors);
+            serverMessage = objectMapper.writeValueAsString(neighbors);
+            return serverMessage;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error when writing BuildJSONListNeighbors message");
+        }
+        return serverMessage;
+    }
 }

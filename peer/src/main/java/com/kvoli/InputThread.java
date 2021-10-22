@@ -24,9 +24,7 @@ public class InputThread extends Thread {
     }
 
     /**
-     * Currently only one command
-     * Usage: #connect PORTNUMBER
-     * IP address is hardcoded to make testing easier.
+     * To connect to another peer type #connect <PORT>
      */
 
     @Override
@@ -56,17 +54,18 @@ public class InputThread extends Thread {
                 if (input == "") {
                     System.out.println("You need to enter an IP address and Port Number. You can't connect to nothing!");
                 }
-                else {
-                    // TODO: destination IP is currently hardcoded to make testing easier.
-                    String destIP = "localhost";
+                // TODO: destination IP is currently hardcoded to make testing easier.
+                String destIP = "localhost";
+                try {
                     int destPort = Integer.parseInt(input);
-
                     System.out.println("DEBUG: Trying to connect to " + destIP + " " + destPort);
                     peer.connectToPeer(destIP, destPort);
+                } catch (Exception e) {
+                    System.out.println("Invalid input (parseInt error)");
                 }
             }
 
-            else if (text.contains("#list")) {
+            else if (text.equals("#list")) {
                 ClientPackets.List listRoom = new ClientPackets.List();
                 this.peer.clientListCmdStatus = true;
 
@@ -81,6 +80,16 @@ public class InputThread extends Thread {
                     writer.flush();
                 }
             }
+
+
+            // Peer can ping the server it is connected to and ask for a list of other people connected to the server.
+            else if (text.contains("#listneighbors") && (peer.connectionEstablishedWithServer)) {
+                ClientPackets.ListNeighbors listN = new ClientPackets.ListNeighbors();
+                String msg = jWrite.buildListNeighborsMsg(listN);
+                writer.println(msg);
+                writer.flush();
+            }
+
 
             else if (text.contains("#create")) {
                 String input = text.replaceAll("#create", "");
@@ -99,9 +108,7 @@ public class InputThread extends Thread {
                     peer.joinLocalRoom(peer.clientCurrentRoom, input);
 
                 }
-
                 else {
-                    // Otherwise
                     ClientPackets.Join joinRoom = new ClientPackets.Join(input);
                     String msg = jWrite.buildJoinMsg(joinRoom);
                     writer.println(msg);
@@ -135,12 +142,6 @@ public class InputThread extends Thread {
                     peer.broadcastAsServer(text);
                 }
             }
-
-
         }
-
-
     }
-
-
 }
