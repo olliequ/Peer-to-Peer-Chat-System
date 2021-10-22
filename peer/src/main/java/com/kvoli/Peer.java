@@ -140,7 +140,8 @@ public class Peer {
     String identity = serverIdentity;
 
     for (ServerConnection c: currentConnections) {
-      if (c.roomID.equals(clientCurrentRoom)) {
+      // Ensure rooms match and that the room is not the default empty string.
+      if (c.roomID.equals(clientCurrentRoom) && (c.roomID.length() > 1)) {
         JSONWriter jsonBuild = new JSONWriter();
         String serverMessage = jsonBuild.buildJSON(message, identity);
         //System.out.format("%nSending "+"JSON string(s). Check below:%n");
@@ -159,9 +160,10 @@ public class Peer {
    * NEW IN A2
    */
   protected synchronized void getLocalRoomList() {
+    System.out.println("Your local room list is: ");
     for (Room r: currentRooms) {
-      System.out.println(r.getRoomOwner());
-      System.out.println(r.getRoomName() + " " + r.getRoomSize() + " users");
+      //System.out.println(r.getRoomOwner());
+      System.out.println(r.getRoomName() + " with " + r.getRoomSize() + " users");
     }
   }
 
@@ -277,13 +279,20 @@ public class Peer {
     currentConnections.remove(conn);
   }
 
-  // Display a welcome message to the new user along with list of current rooms.
-  private void welcome(String clientIdentity, ServerConnection conn) {
-    String welcomeClient = "---> Welcome! You are connected as: " + clientIdentity + "\n";
-    String FromServerOrNot = "Yes"; // Make this a boolean instead?
+
+
+  /**
+   * Send a packet to the client that discloses their identity (their outgoing port) when they initially connect to us.
+   * Only we know what their outgoing port is....unless there's another way?
+   * Uses the standard message protocol.
+   * @param identity
+   * @param conn
+   */
+  private void welcome(String identity, ServerConnection conn) {
+    String idOfClient = identity;
     JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
-    String serverMessage = jsonBuild.buildJSON(welcomeClient, serverIdentity); // Calls method that builds the JSON String.
-    System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
+    String serverMessage = jsonBuild.buildJSON(idOfClient, serverIdentity); // Calls method that builds the JSON String.
+    //System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
     System.out.format("Welcome JSON String: %s%n", serverMessage);
     conn.sendMessage(serverMessage + ". \n");
 
@@ -356,53 +365,10 @@ public class Peer {
   }
 
 
-  // Method to verify user identity (used for the changeIdentity method below)
-  private synchronized boolean verifyIdentity(ServerConnection conn, String newIdentity) {
-    // Make sure the new identity is unique
-    for (ServerConnection c : currentConnections) {
-      if (c.identity.equals(newIdentity)) {
-        System.out.println("Failed to change identity. Already in use.");
-        return false;
-      }
-    }
-    // Ensure new identity is alphanumeric and between 3 - 16 characters.
-    if (!newIdentity.matches("[A-Za-z0-9]+") || (newIdentity.length() < 3) || ((newIdentity).length()) > 16) {
-      // Print server-side fail message
-      System.out.println("Failed to change identity. Bad format.");
-      return false;
-    }
-    return true;
-  }
 
 
-  private synchronized String changeIdentity(ServerConnection conn, String newIdentity, boolean isValid) {
-    // If the new identity is invalid then we tell the client that we can't change their identity.
-    if (!isValid) {
-      JSONWriter jsonBuild = new JSONWriter();
-      String serverMessage = jsonBuild.buildJSONNewID(conn.identity, conn.identity);
-      conn.sendMessage(serverMessage + "\n");
-      return serverMessage;
-    }
 
-    // Otherwise, change the identity of the client
-    else {
-      String oldID = conn.identity;
-      conn.identity = newIdentity;
 
-      // If this client is the owner of existing rooms then we need to update their owner status to reflect new identity.
-      for (Room r: currentRooms) {
-        if (r.getRoomOwner().equals(oldID)) {
-          r.setRoomOwner(newIdentity);
-        }
-      }
-
-      // Update client room roomContents with new identity.
-      currentRooms.get(getRoomIndex(conn.roomID)).changeUserID(oldID, newIdentity);
-      JSONWriter jsonBuild = new JSONWriter();
-      String serverMessage = jsonBuild.buildJSONNewID(oldID, conn.identity);
-      return serverMessage;
-    }
-  }
 
 
   // Method to allow a peer to join a room hosted by a remote peer.
@@ -414,6 +380,7 @@ public class Peer {
         newRoomIsValid = true;
         r.addUser(conn.identity); // Room is valid, so let's add the user to this new room.
         conn.roomID = newRoom;
+        //clientCurrentRoom = newRoom;
         break;
       }
     }
@@ -454,7 +421,8 @@ public class Peer {
         }
       }
       String newRoomContents = getRoomContents(conn, newRoom);
-      System.out.println("JSON containing members of room this client just joined: "+newRoomContents);
+      //System.out.println("JSON containing members of room this client just joined: "+newRoomContents);
+      System.out.println(conn.identity + " moved from " + oldRoom + " to " + newRoom);
       conn.sendMessage(newRoomContents + "\n");
       // Thus the client who moves to a new room gets sent 2 JSON strings -- 1 is the message that he has moved rooms
       // (everyone else in new room also gets this string), and 2 is the current contents of the new room.

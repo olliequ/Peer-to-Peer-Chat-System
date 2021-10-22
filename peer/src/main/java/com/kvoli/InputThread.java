@@ -107,6 +107,15 @@ public class InputThread extends Thread {
                 }
             }
 
+            else if (text.contains("#who") && (peer.connectionEstablishedWithServer)) {
+                String input = text.replaceAll("#who", "");
+                input = input.stripLeading();
+                ClientPackets.Who who = new ClientPackets.Who(input);
+                String msg = jWrite.buildWhoMsg(who);
+                writer.println(msg);
+                writer.flush();
+            }
+
             // Input is not a command therefore it must be a message.
             else {
                 // Condition for if we're connected to the 'server' peer
@@ -114,7 +123,7 @@ public class InputThread extends Thread {
                     // Wrap this input into JSON.
                     ClientPackets.Message message = new ClientPackets.Message(text);
                     String msg = jWrite.buildMessage(message);
-                    System.out.println("SENT: " + msg);
+                    //System.out.println("SENT: " + msg);
                     writer.println(msg);
                     writer.flush();
                 }
