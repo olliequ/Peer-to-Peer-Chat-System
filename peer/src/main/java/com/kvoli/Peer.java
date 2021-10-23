@@ -4,6 +4,7 @@ import com.kvoli.base.*;
 
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -12,7 +13,7 @@ import java.util.List;
 
 public class Peer {
   protected Socket socket;
-  // Destination (server) socket (i.e. the peer that we have connected to)
+  // Destination (server) socket (i.e. the peer that we have connected to).
   protected Socket destSocket;
   // Input and output streams from the peer (server) that we are connected to.
   protected OutputStream ToConnectedPeer;
@@ -25,7 +26,8 @@ public class Peer {
   protected String clientCurrentRoom;
 
   // All peers can be servers. A peer must establish their own server identity.
-  protected String serverIdentity;
+  protected InetAddress serverIdentityAddress;
+  protected int serverIdentityPort;
   private boolean acceptConnections = false;
 
   // As a server we maintain a list of connections and a list of rooms we are aware of.
@@ -37,6 +39,7 @@ public class Peer {
   public static final String ANSI_GREEN = "\u001B[32m";
   public static final String ANSI_YELLOW = "\u001B[33m";
   public static final String ANSI_RESET = "\u001B[0m";
+  public final int outgoingPort = 54000;
 
   // Old code from A1
   public static int PORT = 4444;
@@ -63,7 +66,7 @@ public class Peer {
     ServerSocket serverSocket;
     try {
       // Bind serverSocket to a port. We're using port 0 so that the OS will pick a random port.
-      serverSocket = new ServerSocket(0);
+      serverSocket = new ServerSocket(0); // This is the socket that we listen on to receive incoming connections.
       acceptConnections = true;
 
       // From my understanding there are two ports. An INCOMING and an OUTGOING port.
@@ -71,12 +74,13 @@ public class Peer {
       System.out.printf("Listening to incoming peer connections on port "+ANSI_YELLOW+"%d.\n"+ANSI_RESET, serverSocket.getLocalPort());
 
       // All peers can be 'servers'. We need to establish our own identity. TODO: Unsure if this is correct.
-      serverIdentity = serverSocket.getInetAddress().toString() + ":" + serverSocket.getLocalPort();
-      System.out.println("This peer's identity is: "+ANSI_YELLOW+serverIdentity+ANSI_RESET+"\n----------------");
+      serverIdentityAddress = serverSocket.getInetAddress();
+      serverIdentityPort = serverSocket.getLocalPort();
+      System.out.println("This peer's identity is: "+ANSI_YELLOW+ serverIdentityAddress +ANSI_RESET+"\n----------------");
 
       // Testing purposes: create a test room
       clientCurrentRoom = "";
-      currentRooms.add(new Room("tr", serverIdentity));
+      currentRooms.add(new Room("tr", serverIdentityAddress.toString()));
 
       // The peers port will accept incoming connections within an infinite loop.
       while (acceptConnections) {
@@ -84,13 +88,14 @@ public class Peer {
         Socket socket = serverSocket.accept();
 
         // Note that the port number we received is the clients OUTGOING port.
-        System.out.println(ANSI_CYAN+"\n---> Accepted connection from another peer with port number: "+ANSI_RESET+ socket.getPort());
+        System.out.println(ANSI_CYAN+"\n---> Accepted connection from another peer who's using their port number: "+ANSI_RESET+ socket.getPort());
 
         // The connected peer's identity is a combination of their IP address and their outgoing port number
         String addressOfPeer = socket.getInetAddress().toString();
         int portOfPeer = socket.getPort();
         String clientIdentity = addressOfPeer + ':' + portOfPeer;
         System.out.println("\t- The identity of the peer that just connected to you is: " + clientIdentity);
+        System.out.format("\t- Connected off of you on: %s:%d%n", socket.getLocalAddress(), socket.getLocalPort());
 
         // Each peer that connects to this peer will have its own thread of execution.
         // The connection will be able to handle itself.
@@ -117,14 +122,17 @@ public class Peer {
    * @param destIP              Currently using 'localhost'. TODO: Unsure if this is correct.
    * @param destPort            Port number of the peer we want to connect to.
    */
-  protected synchronized void connectToPeer(String destIP, int destPort) {
+  protected synchronized void connectToPeer(String destIP, int destPort, int outGooingPort) {
     try {
       // Attempt to establish connection to the destination IP and Port
-      this.destSocket = new Socket(destIP, destPort);
+      // System.out.format("Connected to: %s, %d%n", this.destSocket.getInetAddress(), this.destSocket.getPort());
+      this.destSocket = new Socket(destIP, destPort, serverIdentityAddress, outGooingPort);
       this.ToConnectedPeer = destSocket.getOutputStream();
       this.FromConnectedPeer = destSocket.getInputStream();
       this.reader = new BufferedReader(new InputStreamReader(FromConnectedPeer));
       new GetMessageThread(this).start();
+      System.out.format("Connected to: %s:%d%n", this.destSocket.getInetAddress(), this.destSocket.getPort());
+      System.out.format("Connected from: %s:%d%n", this.destSocket.getLocalAddress(), this.destSocket.getLocalPort());
 
     } catch (IOException e) {
       System.out.println("Couldn't connect to peer.");
@@ -139,7 +147,7 @@ public class Peer {
    * NEW IN A2
    */
   protected synchronized void broadcastAsServer(String message) {
-    String identity = serverIdentity;
+    String identity = serverIdentityAddress.toString();
 
     for (ServerConnection c: currentConnections) {
       // Ensure rooms match and that the room is not the default empty string.
@@ -183,7 +191,7 @@ public class Peer {
   protected synchronized void joinLocalRoom(String oldRoom, String newRoom) {
     JSONWriter jsonBuild = new JSONWriter();
 
-    String identity = serverIdentity;
+    String identity = serverIdentityAddress.toString();
 
     // First check if the new 'room' is even valid.
     boolean newRoomIsValid = false;
@@ -292,7 +300,7 @@ public class Peer {
   private void welcome(String identity, ServerConnection conn) {
     String idOfClient = "You've successfully connected to me, "+identity+".";
     JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
-    String serverMessage = jsonBuild.buildJSON(idOfClient, serverIdentity); // Calls method that builds the JSON String.
+    String serverMessage = jsonBuild.buildJSON(idOfClient, serverIdentityAddress.toString()); // Calls method that builds the JSON String.
     //System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
     System.out.format(ANSI_BLUE+"Sending Welcome JSON:"+ANSI_RESET+" %s%n", serverMessage);
     conn.sendMessage(serverMessage + ". \n");

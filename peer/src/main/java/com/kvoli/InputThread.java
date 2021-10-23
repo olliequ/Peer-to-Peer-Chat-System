@@ -4,11 +4,9 @@ import com.kvoli.base.ClientPackets;
 import com.kvoli.base.JSONWriter;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
 
 public class InputThread extends Thread {
     private Peer peer;
@@ -64,7 +62,7 @@ public class InputThread extends Thread {
                     try {
                         int destPort = Integer.parseInt(input);
                         System.out.println("---> Attempting to connect to: " + destIP + " " + destPort);
-                        peer.connectToPeer(destIP, destPort);
+                        peer.connectToPeer(destIP, destPort, 58900);
                         System.out.println(ANSI_GREEN+"Connection successful."+ANSI_RESET);
                     } catch (Exception e) {
                         System.out.println("Invalid input (parseInt error)");
@@ -102,7 +100,7 @@ public class InputThread extends Thread {
                 String input = text.replaceAll("#create", "");
                 input = input.stripLeading();
 
-                peer.createLocalRoom(input, peer.serverIdentity);
+                peer.createLocalRoom(input, peer.serverIdentityAddress.toString());
 
             }
 
