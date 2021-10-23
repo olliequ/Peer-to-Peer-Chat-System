@@ -97,14 +97,27 @@ public class GetMessageThread extends Thread {
                         String former = jRead.getJSONFormerIdentity();
                         String roomid = jRead.getJSONRoomId();
 
-                        if (former.equals(roomid)) {
+                        System.out.println(peer.clientToQuit);
+
+                        // The response of a quit command.
+                        if (roomid.equals("") && (peer.clientToQuit)) {
+                            System.out.println("You have disconnected from the host peer.");
+                            peer.clientToQuit = false;
+                        }
+
+                        else if (former.equals(roomid) && (!peer.clientToQuit)) {
                             System.out.println("The requested room is invalid or non existent.");
                         }
 
-                        else if (former.equals("")) {
+                        else if (former.equals("") && (!peer.clientToQuit)) {
                             System.out.println(identity + " moves to " + roomid);
                             myCurrentRoom = roomid;
                         }
+
+                        else if (!former.equals("") && (roomid).equals("")) {
+                            System.out.println(identity + " left the room after disconnecting from the host peer.");
+                        }
+
                         else {
                             myCurrentRoom = roomid;
                             System.out.println(identity + " moved from " + former + " to " + roomid);

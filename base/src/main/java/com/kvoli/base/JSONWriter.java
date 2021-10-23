@@ -240,4 +240,14 @@ public class JSONWriter {
         }
         return serverMessage;
     }
+
+    public String buildSearchMsg (ClientPackets.SearchNetwork search) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(search);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter buildSearchNetwork message");
+        }
+        return msg;
+    }
 }

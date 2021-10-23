@@ -110,4 +110,11 @@ public class ClientPackets {
         public ListNeighbors() {}
     }
 
+    @JsonTypeName("searchnetwork")
+    public static class SearchNetwork {
+        public String type = "searchnetwork";
+
+        public SearchNetwork() {}
+    }
+
 }

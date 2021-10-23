@@ -23,6 +23,7 @@ public class Peer {
   protected boolean clientListCmdStatus = true;
   protected boolean connectionEstablishedWithServer = false;      // True when we are connected to another peer.
   protected String clientCurrentRoom;
+  protected boolean clientToQuit = false;                         // When we want to #quit we change this value.
 
   // All peers can be servers. A peer must establish their own server identity.
   protected String serverIdentity;
@@ -281,6 +282,24 @@ public class Peer {
     // Return to the calling client
     return neighborsMsg;
   }
+
+
+  protected synchronized String searchNetwork() {
+    // The peer should crawl over all other peers that are available to it. We connect to the first peer that is
+    // connected to us (e.g. peer B), then we ask peer B to hand over all the peers that are connected to it.
+
+    // Iterate over all peers that are connected to us.
+    for (ServerConnection c : currentConnections) {
+      // Connect to this peer using a separate socket.
+      //connectToPeer(c.socket.getInetAddress(), c.socket.getLocalPort());
+
+      // Ask this peer to hand over its rooms via the List command.
+
+      // Ask this peer to hand over its neighbours via the ListNeighbours request.
+    }
+  }
+
+
 
   /**
    * Send a packet to the client that discloses their identity (their outgoing port) when they initially connect to us.
@@ -581,14 +600,28 @@ public class Peer {
 
 
   private synchronized void quit(ServerConnection conn, String roomID) {
-    // Send RoomChange message to all clients in the room
-    JSONWriter jsonBuild = new JSONWriter();
-    String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, roomID, "");
-    System.out.println(serverMessage);
-    broadcastRoom(serverMessage, roomID, null, conn.identity, true);
 
-    // Send roomChange JSON to the requesting client which will result in disconnect.
-    conn.sendMessage(serverMessage + "\n");
+
+    // If the client is in a room, send a roomchange message to all clients within that room.
+    if (!conn.roomID.equals("")) {
+      System.out.println("CASE 1");
+      // Send RoomChange message to all clients in the room
+      JSONWriter jsonBuild = new JSONWriter();
+      String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, roomID, "");
+      System.out.println(serverMessage);
+      broadcastRoom(serverMessage, roomID, null, conn.identity, true);
+
+      // Send roomChange JSON to the requesting client which will result in disconnect.
+      //conn.sendMessage(serverMessage + "\n");
+    }
+
+    else {
+      System.out.println("CASE 2");
+      JSONWriter jsonBuild = new JSONWriter();
+      String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, "", "");
+      conn.sendMessage(serverMessage + "\n");
+    }
+    // Disconnect the client.
     conn.close();
   }
 
@@ -621,11 +654,15 @@ public class Peer {
     private BufferedReader reader;
     private PrintWriter writer;
     private boolean connectionAlive = false;
-    private int port;
+    //private int port;
     private String roomID;
     private int roomIndex;
     private String identity;
     private boolean gracefulDisconnection = false;
+
+    // Used for searchNetwork
+    private String ipAddress;
+    private int portNumber;
 
     public ServerConnection (Socket socket, String identity, String roomID) throws IOException {
       this.socket = socket;
@@ -660,7 +697,7 @@ public class Peer {
             JSONReader jRead = new JSONReader();
             jRead.readInput(in);
             String type = jRead.getJSONType();   // Extract the value from the 'type' key field.
-            System.out.format("%nDEBUG: Received "+"JSON string of type: %s. ", type);
+            System.out.format("%nDEBUG: Received "+"JSON string of type: %s ", type);
             System.out.println();
 
             // The below if-else statements analyse the received JSON object type, and act accordingly.
@@ -780,12 +817,14 @@ public class Peer {
           }
         }
 
-        currentRooms.get(getRoomIndex(roomID)).removeUser(identity);
-        disconnect(this);
+        if (!roomID.equals("")) {
+          currentRooms.get(getRoomIndex(roomID)).removeUser(identity);
+        }
+        //disconnect(this);
         reader.close();
         writer.close();
         socket.close();
-        this.roomID = "NULL";
+        this.roomID = "";
         gracefulDisconnection = true;
 
       } catch (IOException e) {

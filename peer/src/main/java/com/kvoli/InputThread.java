@@ -132,6 +132,31 @@ public class InputThread extends Thread {
                 writer.flush();
             }
 
+
+            else if (text.contains("quit") && (peer.connectionEstablishedWithServer)) {
+                String input = text.replaceAll("#quit", "");
+                input = input.stripLeading();
+                peer.clientToQuit = true;
+
+                ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+                String msg = jWrite.buildQuitMsg(quitMsg);
+                writer.println(msg);
+                writer.flush();
+            }
+
+            // TODO: Rename to "searchnetwork"
+            // Local command that allows the peer to find all the peers available to it
+            else if (text.contains("search") && (peer.connectionEstablishedWithServer)) {
+                String input = text.replaceAll("#search", "");
+                input = input.stripLeading();
+
+                ClientPackets.SearchNetwork searchMsg = new ClientPackets.SearchNetwork();
+                String msg = jWrite.buildSearchMsg(searchMsg);
+                writer.println(msg);
+                writer.flush();
+
+            }
+
             // Input is not a command therefore it must be a message.
             else {
                 // Condition for if we're connected to the 'server' peer
