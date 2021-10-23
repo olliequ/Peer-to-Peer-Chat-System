@@ -34,18 +34,21 @@ public class Peer {
   protected int serverIdentityListeningPort;
   protected String serverIdentity;
   protected String serverIP;
+  protected String connectedPeersIdentity;
 
   private boolean acceptConnections = false;
 
   // As a server we maintain a list of connections and a list of rooms we are aware of.
   private volatile List<ServerConnection> currentConnections = new ArrayList<>();
   private volatile List<Room> currentRooms = new ArrayList<>();
+
   public static final String ANSI_RED = "\u001B[31m";
   public static final String ANSI_BLUE = "\u001B[34m";
   public static final String ANSI_CYAN = "\u001B[36m";
   public static final String ANSI_GREEN = "\u001B[32m";
   public static final String ANSI_YELLOW = "\u001B[33m";
   public static final String ANSI_RESET = "\u001B[0m";
+
   public final int outgoingPort = 54000;
 
   // Old code from A1
@@ -90,7 +93,7 @@ public class Peer {
 
       // Testing purposes: create a test room
       clientCurrentRoom = "";
-      currentRooms.add(new Room("tr", serverIdentityInetAddress.toString()));
+      currentRooms.add(new Room("Test Room", serverIdentityInetAddress.toString()));
 
       // The peers port will accept incoming connections within an infinite loop.
       while (acceptConnections) {
@@ -141,8 +144,9 @@ public class Peer {
       this.FromConnectedPeer = destSocket.getInputStream();
       this.reader = new BufferedReader(new InputStreamReader(FromConnectedPeer));
       new GetMessageThread(this).start();
-      System.out.format("Connected to: %s:%d%n", this.destSocket.getInetAddress(), this.destSocket.getPort());
-      System.out.format("Connected from: %s:%d%n", this.destSocket.getLocalAddress(), this.destSocket.getLocalPort());
+      System.out.format("\t- Connected to: %s:%d%n", this.destSocket.getInetAddress(), this.destSocket.getPort());
+      System.out.format("\t- Connected from: %s:%d%n", this.destSocket.getLocalAddress(), this.destSocket.getLocalPort());
+      connectedPeersIdentity = this.destSocket.getInetAddress()+":"+this.destSocket.getPort();
 
     } catch (IOException e) {
       System.out.println("Couldn't connect to peer.");
@@ -150,12 +154,14 @@ public class Peer {
     }
   }
 
-
-
+  /**
+   *  The peer should crawl over all peers accessible in the network using a breadth-first recursion strategy. We connect to
+   *  each peer (using a separate connection to the peer's existing one -- if there is one that is) and find the rooms
+   *  available in each peer using a #List command and also other peers to search (connect to) using #ListNeighbors.
+   *  We connect to the first peer that is connected to us (e.g. peer B), then we ask peer B to hand over all the peers
+   *  that are connected to it. TODO: Don't forget we have to use BFS. So, search each peer 1 peer away, then 2 away etc.
+   */
   protected synchronized void searchNetwork() {
-    // The peer should crawl over all other peers that are available to it. We connect to the first peer that is
-    // connected to us (e.g. peer B), then we ask peer B to hand over all the peers that are connected to it.
-
     // ArrayList containing the #list from each peer
     ArrayList<List<String>> peerLists = new ArrayList<>();
 
@@ -179,12 +185,9 @@ public class Peer {
       writer.flush();
 
       // Right now it prints to terminal. Need to figure out how to store as value.
-
-
       // Ask this peer to hand over its neighbours via the ListNeighbours request.
     }
   }
-  
 
 
   /**
@@ -220,7 +223,7 @@ public class Peer {
     System.out.println("Your local room list is: ");
     for (Room r: currentRooms) {
       //System.out.println(r.getRoomOwner());
-      System.out.println(r.getRoomName() + " with " + r.getRoomSize() + " users");
+      System.out.println("\t- "+r.getRoomName() + " currently has " + r.getRoomSize() + " users.");
     }
   }
 
@@ -355,9 +358,9 @@ public class Peer {
   private void welcome(String identity, ServerConnection conn) {
     String idOfClient = "You are connected as "+identity+".";
     JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
-    String serverMessage = jsonBuild.buildJSON(idOfClient, serverIdentityInetAddress.toString()); // Calls method that builds the JSON String.
+    String serverMessage = jsonBuild.buildJSON(idOfClient, serverIdentity); // Calls method that builds the JSON String.
     //System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
-    System.out.format(ANSI_BLUE+"Sending Welcome JSON:"+ANSI_RESET+" %s%n", serverMessage);
+    //System.out.format(ANSI_BLUE+"Sending Welcome JSON:"+ANSI_RESET+" %s%n", serverMessage);
     conn.sendMessage(serverMessage + ". \n");
   }
 
@@ -529,8 +532,7 @@ public class Peer {
       // Wrap this information in a RoomList JSON and send it over to the client.
       JSONWriter jsonBuild = new JSONWriter();
       String roomList = jsonBuild.buildJsonRoomList(roomContents);
-      System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
-      System.out.format("RoomListJSON: %s%n", roomList);
+      // System.out.format(ANSI_BLUE+"Sending RoomListJSON: "+ANSI_RESET+"%s%n", roomList);
       conn.sendMessage(roomList + "\n");
     }
 
@@ -767,7 +769,6 @@ public class Peer {
             }
 
             else if (type.equals("list")) {
-              System.out.format("List JSON: %s%n", in);
               getRoomList(this, false, null);
             }
 
@@ -793,15 +794,15 @@ public class Peer {
               // If the room does exist, send the room contents.
               if (roomExists) {
               String contents = getRoomContents(this, whoRoom);
-              System.out.format("%nSending "+"JSON string(s). Check below:%n");
+              // System.out.format("%nSending "+"JSON string(s). Check below:%n");
               System.out.println("BroadcastRoom JSON: " + contents);
               sendMessage(contents + "\n");
               }
               // If it doesn't, send an error message.
               else {
                 String whoErrorMessage = "The room you're inquiring about ("+whoRoom+") doesn't exist. Try again.";
-                String serverMessageJSON = jsonBuild.buildJSON(whoErrorMessage, "Peer");
-                System.out.format("%nSending "+"JSON string(s). Check below:%n");
+                String serverMessageJSON = jsonBuild.buildJSON(whoErrorMessage, serverIdentity); // Replaced "Peer"
+                // System.out.format("%nSending "+"JSON string(s). Check below:%n");
                 System.out.println("WrongWho JSON: " + serverMessageJSON);
                 this.sendMessage(serverMessageJSON + "\n");
               }
@@ -820,7 +821,6 @@ public class Peer {
             }
 
             else if (type.equals("quit")) {
-              System.out.format("Quit JSON: %s%n", in);
               quit(this, roomID);
             }
 
@@ -846,6 +846,7 @@ public class Peer {
     }
 
     public void sendMessage (String msg) {
+      System.out.format(ANSI_BLUE+"Sending JSON:"+ANSI_RESET+" %s", msg);
       writer.print(msg);
       writer.flush(); // Empty the buffer and send the data over the network.
     }

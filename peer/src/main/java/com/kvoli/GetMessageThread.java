@@ -39,9 +39,10 @@ public class GetMessageThread extends Thread {
                 if (in != null) {
                     JSONReader jRead = new JSONReader();
                     jRead.readInput(in);
+                    String type = jRead.getJSONType();
                     String protocol = "null";
 
-                    System.out.println(ANSI_RED+"Received JSON:  "+ANSI_RESET + in);
+                    System.out.println(ANSI_RED+"Received "+type+" JSON: "+ANSI_RESET + in);
 
                     // If we've received some form of input then we've established a connection.
                     this.peer.connectionEstablishedWithServer = true;
@@ -83,7 +84,7 @@ public class GetMessageThread extends Thread {
                         }
                         // Case for when it's someone else's message.
                         else {
-                            System.out.println(ANSI_YELLOW+incomingIdentity+" says: "+ANSI_RESET+ content);
+                            System.out.println(ANSI_YELLOW+incomingIdentity+" says: "+ANSI_RESET+content);
                         }
                     }
 
@@ -91,15 +92,17 @@ public class GetMessageThread extends Thread {
                     else if (protocol.equals("roomlist")) {
                         ArrayList<String> rooms = jRead.getJSONRooms();
                         ArrayList<String> localRooms = new ArrayList<String>();
+                        System.out.format(ANSI_YELLOW+"The peer you're connected to (%s) has the following rooms:%n"+ANSI_RESET, this.peer.connectedPeersIdentity);
 
                         // Print the room list from the server
                         for (String room : rooms) {
                             String roomName = jRead.getJSONRoomName(room);
                             String roomCount = jRead.getJSONRoomCount(room);
-                            System.out.println("Room: " + roomName + " with " + roomCount + " users.");
+                            System.out.println("\t- Room: " + roomName + " with " + roomCount + " users.");
                         }
 
                         // If this peer is hosting rooms locally then we should also return their local room list.
+                        System.out.println(ANSI_YELLOW+"And the rooms you're locally hosting are:"+ANSI_RESET);
                         peer.getLocalRoomList();
                     }
 
@@ -109,11 +112,11 @@ public class GetMessageThread extends Thread {
                         String former = jRead.getJSONFormerIdentity();
                         String roomid = jRead.getJSONRoomId();
 
-                        System.out.println(peer.clientToQuit);
+                        System.out.println("---> peer.clientToQuit: "+peer.clientToQuit);
 
                         // The response of a quit command.
                         if (roomid.equals("") && (peer.clientToQuit)) {
-                            System.out.println("You have disconnected from the host peer.");
+                            System.out.println("You have successfully disconnected from the host peer.");
                             peer.clientToQuit = false;
                         }
 

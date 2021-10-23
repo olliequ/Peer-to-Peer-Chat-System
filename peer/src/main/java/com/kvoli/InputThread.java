@@ -44,9 +44,9 @@ public class InputThread extends Thread {
                 System.out.println("InputThread exception when getting user input.");
             }
 
-            // If we've established a connection with another peer ('server') then build a PrintWriter
+            // If we've established a connection with another peer ('server') then build a PrintWriter.
             // We cannot build this without establishing a connection.
-            if (peer.connectionEstablishedWithServer == true) {
+            if (peer.connectionEstablishedWithServer) {
                 writer = new PrintWriter(peer.ToConnectedPeer, true);
             }
 
@@ -64,7 +64,6 @@ public class InputThread extends Thread {
                         System.out.println("---> Attempting to connect to: " + destIP + " " + destPort);
                         peer.connectToPeer(destIP, destPort, 58900);
                         System.out.println(ANSI_GREEN+"Connection successful."+ANSI_RESET);
-
                     } catch (Exception e) {
                         System.out.println("Invalid input (parseInt error)");
                     }
@@ -82,6 +81,7 @@ public class InputThread extends Thread {
                 }
                 else {
                     String msg = jWrite.buildListMsg(listRoom);
+                    System.out.format(ANSI_BLUE+"Sending #list JSON:"+ANSI_RESET+" %s%n", msg);
                     writer.println(msg);
                     writer.flush();
                 }
@@ -92,6 +92,7 @@ public class InputThread extends Thread {
             else if (text.contains("#listneighbors") && (peer.connectionEstablishedWithServer)) {
                 ClientPackets.ListNeighbors listN = new ClientPackets.ListNeighbors();
                 String msg = jWrite.buildListNeighborsMsg(listN);
+                System.out.format(ANSI_BLUE+"Sending #listneighbors JSON:"+ANSI_RESET+" %s%n", msg);
                 writer.println(msg);
                 writer.flush();
             }
@@ -100,7 +101,6 @@ public class InputThread extends Thread {
             else if (text.contains("#create")) {
                 String input = text.replaceAll("#create", "");
                 input = input.stripLeading();
-
                 peer.createLocalRoom(input, peer.serverIdentityInetAddress.toString());
 
             }
@@ -117,6 +117,7 @@ public class InputThread extends Thread {
                 else {
                     ClientPackets.Join joinRoom = new ClientPackets.Join(input);
                     String msg = jWrite.buildJoinMsg(joinRoom);
+                    System.out.format(ANSI_BLUE+"Sending #join JSON:"+ANSI_RESET+" %s%n", msg);
                     writer.println(msg);
                     writer.flush();
                 }
@@ -127,6 +128,7 @@ public class InputThread extends Thread {
                 input = input.stripLeading();
                 ClientPackets.Who who = new ClientPackets.Who(input);
                 String msg = jWrite.buildWhoMsg(who);
+                System.out.format(ANSI_BLUE+"Sending #who JSON:"+ANSI_RESET+" %s%n", msg);
                 writer.println(msg);
                 writer.flush();
             }
@@ -136,16 +138,15 @@ public class InputThread extends Thread {
                 String input = text.replaceAll("#quit", "");
                 input = input.stripLeading();
                 peer.clientToQuit = true;
-
                 ClientPackets.Quit quitMsg = new ClientPackets.Quit();
                 String msg = jWrite.buildQuitMsg(quitMsg);
+                System.out.format(ANSI_BLUE+"Sending #quit JSON:"+ANSI_RESET+" %s%n", msg);
                 writer.println(msg);
                 writer.flush();
             }
 
-            // TODO: Rename to "searchnetwork"
             // Local command that allows the peer to find all the peers available to it
-            else if (text.contains("search")) {
+            else if (text.contains("searchnetwork")) {
                 peer.searchNetwork();
             }
 
