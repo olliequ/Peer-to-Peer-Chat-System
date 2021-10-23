@@ -110,4 +110,23 @@ public class ClientPackets {
         public ListNeighbors() {}
     }
 
+    @JsonTypeName("searchnetwork")
+    public static class SearchNetwork {
+        public String type = "searchnetwork";
+
+        public SearchNetwork() {}
+    }
+
+    @JsonTypeName("hostchange")
+    public static class HostChange {
+        public String type = "hostchange";
+        public int port;
+        public String ip;
+
+        public HostChange(int port, String ip) {
+            this.port = port;
+            this.ip = ip;
+        }
+    }
+
 }

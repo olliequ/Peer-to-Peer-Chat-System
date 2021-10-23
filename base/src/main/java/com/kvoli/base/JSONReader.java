@@ -33,6 +33,14 @@ public class JSONReader {
         return jNode.get("type").asText();
     }
 
+    public String getJSONHost() {
+        return jNode.get("port").asText();
+    }
+
+    public String getJSONIP() {
+        return jNode.get("ip").asText();
+    }
+
     public String getJSONContent() {
         return jNode.get("content").asText();
     }

@@ -64,6 +64,7 @@ public class InputThread extends Thread {
                         System.out.println("---> Attempting to connect to: " + destIP + " " + destPort);
                         peer.connectToPeer(destIP, destPort, 58900);
                         System.out.println(ANSI_GREEN+"Connection successful."+ANSI_RESET);
+
                     } catch (Exception e) {
                         System.out.println("Invalid input (parseInt error)");
                     }
@@ -100,7 +101,7 @@ public class InputThread extends Thread {
                 String input = text.replaceAll("#create", "");
                 input = input.stripLeading();
 
-                peer.createLocalRoom(input, peer.serverIdentityAddress.toString());
+                peer.createLocalRoom(input, peer.serverIdentityInetAddress.toString());
 
             }
 
@@ -128,6 +129,24 @@ public class InputThread extends Thread {
                 String msg = jWrite.buildWhoMsg(who);
                 writer.println(msg);
                 writer.flush();
+            }
+
+
+            else if (text.contains("quit") && (peer.connectionEstablishedWithServer)) {
+                String input = text.replaceAll("#quit", "");
+                input = input.stripLeading();
+                peer.clientToQuit = true;
+
+                ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+                String msg = jWrite.buildQuitMsg(quitMsg);
+                writer.println(msg);
+                writer.flush();
+            }
+
+            // TODO: Rename to "searchnetwork"
+            // Local command that allows the peer to find all the peers available to it
+            else if (text.contains("search")) {
+                peer.searchNetwork();
             }
 
             // Input is not a command therefore it must be a message.

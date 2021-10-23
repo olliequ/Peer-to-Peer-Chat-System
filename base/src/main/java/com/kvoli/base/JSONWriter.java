@@ -240,4 +240,24 @@ public class JSONWriter {
         }
         return serverMessage;
     }
+
+    public String buildSearchMsg (ClientPackets.SearchNetwork search) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(search);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter buildSearchNetwork message");
+        }
+        return msg;
+    }
+
+    public String buildHostChangeMsg (ClientPackets.HostChange hostChange) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(hostChange);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter buildHostChangeMsg");
+        }
+        return msg;
+    }
 }

@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class Peer {
+  private PrintWriter writer;
+
   protected Socket socket;
   // Destination (server) socket (i.e. the peer that we have connected to).
   protected Socket destSocket;
@@ -24,10 +26,15 @@ public class Peer {
   protected boolean clientListCmdStatus = true;
   protected boolean connectionEstablishedWithServer = false;      // True when we are connected to another peer.
   protected String clientCurrentRoom;
+  protected boolean clientToQuit = false;                         // When we want to #quit we change this value.
 
   // All peers can be servers. A peer must establish their own server identity.
-  protected InetAddress serverIdentityAddress;
-  protected int serverIdentityPort;
+
+  protected InetAddress serverIdentityInetAddress;
+  protected int serverIdentityListeningPort;
+  protected String serverIdentity;
+  protected String serverIP;
+
   private boolean acceptConnections = false;
 
   // As a server we maintain a list of connections and a list of rooms we are aware of.
@@ -72,15 +79,18 @@ public class Peer {
       // From my understanding there are two ports. An INCOMING and an OUTGOING port.
       // This is the peers INCOMING port.
       System.out.printf("Listening to incoming peer connections on port "+ANSI_YELLOW+"%d.\n"+ANSI_RESET, serverSocket.getLocalPort());
+      System.out.println("This peers IP address is: " + serverSocket.getInetAddress().getHostAddress());
 
       // All peers can be 'servers'. We need to establish our own identity. TODO: Unsure if this is correct.
-      serverIdentityAddress = serverSocket.getInetAddress();
-      serverIdentityPort = serverSocket.getLocalPort();
-      System.out.println("This peer's identity is: "+ANSI_YELLOW+ serverIdentityAddress +ANSI_RESET+"\n----------------");
+      serverIdentityInetAddress = serverSocket.getInetAddress();        // 0.0.0.0\0.0.0.0
+      serverIP = serverSocket.getInetAddress().getHostAddress();    // 0.0.0.0
+      serverIdentityListeningPort = serverSocket.getLocalPort();
+      serverIdentity = serverIP + ":" + serverIdentityListeningPort;
+      System.out.println("This peer's identity is: "+ANSI_YELLOW+ serverIdentityInetAddress +ANSI_RESET+"\n----------------");
 
       // Testing purposes: create a test room
       clientCurrentRoom = "";
-      currentRooms.add(new Room("tr", serverIdentityAddress.toString()));
+      currentRooms.add(new Room("tr", serverIdentityInetAddress.toString()));
 
       // The peers port will accept incoming connections within an infinite loop.
       while (acceptConnections) {
@@ -126,7 +136,7 @@ public class Peer {
     try {
       // Attempt to establish connection to the destination IP and Port
       // System.out.format("Connected to: %s, %d%n", this.destSocket.getInetAddress(), this.destSocket.getPort());
-      this.destSocket = new Socket(destIP, destPort, serverIdentityAddress, outGooingPort);
+      this.destSocket = new Socket(destIP, destPort, serverIdentityInetAddress, outGooingPort);
       this.ToConnectedPeer = destSocket.getOutputStream();
       this.FromConnectedPeer = destSocket.getInputStream();
       this.reader = new BufferedReader(new InputStreamReader(FromConnectedPeer));
@@ -140,6 +150,43 @@ public class Peer {
     }
   }
 
+
+
+  protected synchronized void searchNetwork() {
+    // The peer should crawl over all other peers that are available to it. We connect to the first peer that is
+    // connected to us (e.g. peer B), then we ask peer B to hand over all the peers that are connected to it.
+
+    // ArrayList containing the #list from each peer
+    ArrayList<List<String>> peerLists = new ArrayList<>();
+
+    // ArrayList containing the #listneighbors from each peer
+    ArrayList<String> peerNeighbors = new ArrayList<String>();
+
+    // Iterate over all peers that are connected to us.
+    for (ServerConnection c : currentConnections) {
+      // Connect to this peer using a separate socket.
+      System.out.println("Listening port of that peer is : " + c.listenPort);
+      System.out.println("That peers IP is: " + c.ipAddress);
+      connectToPeer(c.ipAddress, c.listenPort, 6000); // TODO: Change this 6000.
+
+      writer = new PrintWriter(ToConnectedPeer, true);
+      JSONWriter jWrite = new JSONWriter();
+
+      // Ask this peer to hand over its rooms via the List command.
+      ClientPackets.List listRoom = new ClientPackets.List();
+      String msg = jWrite.buildListMsg(listRoom);
+      writer.println(msg);
+      writer.flush();
+
+      // Right now it prints to terminal. Need to figure out how to store as value.
+
+
+      // Ask this peer to hand over its neighbours via the ListNeighbours request.
+    }
+  }
+  
+
+
   /**
    * If a server is acting as a client in their own room (i.e they type a message) then we need to broadcast it to
    * the other users.
@@ -147,7 +194,7 @@ public class Peer {
    * NEW IN A2
    */
   protected synchronized void broadcastAsServer(String message) {
-    String identity = serverIdentityAddress.toString();
+    String identity = serverIdentityInetAddress.toString();
 
     for (ServerConnection c: currentConnections) {
       // Ensure rooms match and that the room is not the default empty string.
@@ -191,7 +238,7 @@ public class Peer {
   protected synchronized void joinLocalRoom(String oldRoom, String newRoom) {
     JSONWriter jsonBuild = new JSONWriter();
 
-    String identity = serverIdentityAddress.toString();
+    String identity = serverIdentityInetAddress.toString();
 
     // First check if the new 'room' is even valid.
     boolean newRoomIsValid = false;
@@ -233,7 +280,6 @@ public class Peer {
 
   /**
    * A server can act as a client. As such, they need to be able to create their own rooms.
-   * NEW IN A2
    *
    * @param newRoomID
    * @param ownerIdentity
@@ -259,12 +305,16 @@ public class Peer {
     }
   }
 
+
+
   private synchronized void readMessage(String roomID, String msgContent, String msgIdentity) {
     // If the server is in the same room as the sender then they should be able to read the message
     if (clientCurrentRoom.equals(roomID)) {
       System.out.println(msgIdentity + ": " + msgContent);
     }
   }
+
+
 
   /**
    * The server should respond with a list of peers that are currently connected to it (not including its own network
@@ -290,6 +340,11 @@ public class Peer {
     return neighborsMsg;
   }
 
+
+
+
+
+
   /**
    * Send a packet to the client that discloses their identity (their outgoing port) when they initially connect to us.
    * Only we know what their outgoing port is....unless there's another way?
@@ -298,9 +353,9 @@ public class Peer {
    * @param conn
    */
   private void welcome(String identity, ServerConnection conn) {
-    String idOfClient = "You've successfully connected to me, "+identity+".";
+    String idOfClient = "You are connected as "+identity+".";
     JSONWriter jsonBuild = new JSONWriter();   // Instantiate object that has method to build JSON string.
-    String serverMessage = jsonBuild.buildJSON(idOfClient, serverIdentityAddress.toString()); // Calls method that builds the JSON String.
+    String serverMessage = jsonBuild.buildJSON(idOfClient, serverIdentityInetAddress.toString()); // Calls method that builds the JSON String.
     //System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
     System.out.format(ANSI_BLUE+"Sending Welcome JSON:"+ANSI_RESET+" %s%n", serverMessage);
     conn.sendMessage(serverMessage + ". \n");
@@ -460,7 +515,7 @@ public class Peer {
 
 
   // Method used for the RoomList protocol. Second and third parameter optional.
-  protected synchronized void getRoomList(ServerConnection conn, boolean createModifiedList, String newRoomID) {
+  protected synchronized String getRoomList(ServerConnection conn, boolean createModifiedList, String newRoomID) {
     List<String> roomContents = new ArrayList<String>();
     ArrayList<ArrayList<String>> roomInformation = new ArrayList<>();
 
@@ -496,6 +551,7 @@ public class Peer {
       System.out.format("Invalid room, reduced RoomList JSON: %s%n", roomList);
       conn.sendMessage(roomList + "\n");
     }
+    return newRoomID;
   }
 
 
@@ -589,14 +645,26 @@ public class Peer {
 
 
   private synchronized void quit(ServerConnection conn, String roomID) {
-    // Send RoomChange message to all clients in the room
-    JSONWriter jsonBuild = new JSONWriter();
-    String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, roomID, "");
-    System.out.println(serverMessage);
-    broadcastRoom(serverMessage, roomID, null, conn.identity, true);
+    // If the client is in a room, send a roomchange message to all clients within that room.
+    if (!conn.roomID.equals("")) {
+      System.out.println("CASE 1");
+      // Send RoomChange message to all clients in the room
+      JSONWriter jsonBuild = new JSONWriter();
+      String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, roomID, "");
+      System.out.println(serverMessage);
+      broadcastRoom(serverMessage, roomID, null, conn.identity, true);
 
-    // Send roomChange JSON to the requesting client which will result in disconnect.
-    conn.sendMessage(serverMessage + "\n");
+      // Send roomChange JSON to the requesting client which will result in disconnect.
+      //conn.sendMessage(serverMessage + "\n");
+    }
+
+    else {
+      System.out.println("CASE 2");
+      JSONWriter jsonBuild = new JSONWriter();
+      String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, "", "");
+      conn.sendMessage(serverMessage + "\n");
+    }
+    // Disconnect the client.
     conn.close();
   }
 
@@ -619,6 +687,7 @@ public class Peer {
 
 
 
+
   /**
    * All current clients have a 'ServerConnection' which is used to listen to each client.
    * Each client is identified by the String 'identity'
@@ -629,11 +698,15 @@ public class Peer {
     private BufferedReader reader;
     private PrintWriter writer;
     private boolean connectionAlive = false;
-    private int port;
+    //private int port;
     private String roomID;
     private int roomIndex;
     private String identity;
     private boolean gracefulDisconnection = false;
+
+    // Used for searchNetwork
+    private String ipAddress;
+    private int listenPort;
 
     public ServerConnection (Socket socket, String identity, String roomID) throws IOException {
       this.socket = socket;
@@ -656,7 +729,6 @@ public class Peer {
 
       // Welcome the user (show current rooms) and then move them to MainHall.
       welcome(identity, this); // Generates a welcome JSON string message and flushes it to the client, which will post it on the client's screen.
-      //joinRoom(this, "", "MainHall");
 
       while (connectionAlive) {
         try {
@@ -668,8 +740,7 @@ public class Peer {
             JSONReader jRead = new JSONReader();
             jRead.readInput(in);
             String type = jRead.getJSONType();   // Extract the value from the 'type' key field.
-            System.out.format("%nDEBUG: Received "+"JSON string of type: %s. ", type);
-            System.out.println();
+            System.out.format(ANSI_RED+"Received "+type+" JSON: "+ANSI_RESET+"%s%n", in);
 
             // The below if-else statements analyse the received JSON object type, and act accordingly.
 
@@ -683,11 +754,14 @@ public class Peer {
               broadcastRoom(msg, roomID, null, identity, false);     // "this" -> ignore ourselves in the broadcast
             }
 
+            else if (type.equals("hostchange")) {
+              this.ipAddress = jRead.getJSONIP();
+              this.listenPort = Integer.valueOf(jRead.getJSONHost());
+            }
 
             else if (type.equals("join")) {
               System.out.format("JoinRoom JSON: %s%n", in);
               String newRoom = jRead.getJSONRoomId();
-              //System.out.println("DEBUG: Peer is attempting to join '" + newRoom+"'.");
               String currentRoom = roomID;
               joinRoom(this, currentRoom, newRoom);
             }
@@ -700,6 +774,10 @@ public class Peer {
             else if (type.equals("listneighbors")) {
               String listNeighbors = getListNeighbors(this);
               sendMessage(listNeighbors + "\n");
+            }
+
+            else if (type.equals("searchnetwork")) {
+              searchNetwork();
             }
 
             else if (type.equals("who")) {
@@ -772,6 +850,11 @@ public class Peer {
       writer.flush(); // Empty the buffer and send the data over the network.
     }
 
+//    public void getList() {
+//      List<String> roomContents = new ArrayList<String>();
+//      getLocalRoomList();
+//    }
+
     public void close() {
       try {
         // Traverse to the room that the client belongs to and remove client from that room.
@@ -788,12 +871,14 @@ public class Peer {
           }
         }
 
-        currentRooms.get(getRoomIndex(roomID)).removeUser(identity);
-        disconnect(this);
+        if (!roomID.equals("")) {
+          currentRooms.get(getRoomIndex(roomID)).removeUser(identity);
+        }
+        //disconnect(this);
         reader.close();
         writer.close();
         socket.close();
-        this.roomID = "NULL";
+        this.roomID = "";
         gracefulDisconnection = true;
 
       } catch (IOException e) {

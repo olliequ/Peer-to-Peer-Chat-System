@@ -1,16 +1,20 @@
 package com.kvoli;
 
+import com.kvoli.base.ClientPackets;
 import com.kvoli.base.JSONReader;
+import com.kvoli.base.JSONWriter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 
 public class GetMessageThread extends Thread {
     private Peer peer;
     private BufferedReader reader;
+    private PrintWriter writer;
     private Socket socket;
     boolean getPeerMessages = true;
     private String serverAssignedIdentity = "NULL";             // Our IP and outgoing port number
@@ -28,6 +32,8 @@ public class GetMessageThread extends Thread {
     @Override
     public void run() {
         while (getPeerMessages) {
+            JSONWriter jWrite = new JSONWriter();
+
             try {
                 String in = reader.readLine(); // Reads in JSON objects as they arrive
                 if (in != null) {
@@ -59,10 +65,16 @@ public class GetMessageThread extends Thread {
                         // Upon initial connection the server tells us our identity (IP + outgoing port)
                         if (serverAssignedIdentity.equals("NULL")) {
                             serverAssignedIdentity = content;
-                        }
 
-                        //System.out.println("DEBUG: serverAssID is " + serverAssignedIdentity);
-                        //System.out.println("DEBUG: incomID is " + incomingIdentity);
+                            // Send packet to inform the server of our listening address and port
+                            //int peerListeningPort = peer.listeningPort;
+                            ClientPackets.HostChange hostChange = new ClientPackets.HostChange(peer.serverIdentityListeningPort, peer.serverIP);
+                            String msg = jWrite.buildHostChangeMsg(hostChange);
+
+                            writer = new PrintWriter(peer.ToConnectedPeer, true);
+                            writer.println(msg);
+                            writer.flush();
+                        }
 
                         // If it's our own message, prepend our room ID in front of our message.
                         if (incomingIdentity.equals(serverAssignedIdentity)) {
@@ -97,14 +109,27 @@ public class GetMessageThread extends Thread {
                         String former = jRead.getJSONFormerIdentity();
                         String roomid = jRead.getJSONRoomId();
 
-                        if (former.equals(roomid)) {
+                        System.out.println(peer.clientToQuit);
+
+                        // The response of a quit command.
+                        if (roomid.equals("") && (peer.clientToQuit)) {
+                            System.out.println("You have disconnected from the host peer.");
+                            peer.clientToQuit = false;
+                        }
+
+                        else if (former.equals(roomid) && (!peer.clientToQuit)) {
                             System.out.println("The requested room is invalid or non existent.");
                         }
 
-                        else if (former.equals("")) {
+                        else if (former.equals("") && (!peer.clientToQuit)) {
                             System.out.println(identity + " moves to " + roomid);
                             myCurrentRoom = roomid;
                         }
+
+                        else if (!former.equals("") && (roomid).equals("")) {
+                            System.out.println(identity + " left the room after disconnecting from the host peer.");
+                        }
+
                         else {
                             myCurrentRoom = roomid;
                             System.out.println(identity + " moved from " + former + " to " + roomid);
@@ -132,9 +157,8 @@ public class GetMessageThread extends Thread {
                         System.out.println("List of neighbors: " + peers);
                     }
 
-
-
                 }
+
             } catch (IOException e) {
                 System.out.println("GetMessageThread exception when retrieving messages from peer");
                 try {
