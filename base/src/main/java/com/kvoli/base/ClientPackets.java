@@ -117,4 +117,16 @@ public class ClientPackets {
         public SearchNetwork() {}
     }
 
+    @JsonTypeName("hostchange")
+    public static class HostChange {
+        public String type = "hostchange";
+        public int port;
+        public String ip;
+
+        public HostChange(int port, String ip) {
+            this.port = port;
+            this.ip = ip;
+        }
+    }
+
 }
