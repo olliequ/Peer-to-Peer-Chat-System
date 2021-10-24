@@ -95,8 +95,7 @@ public class GetMessageThread extends Thread {
                         ArrayList<String> rooms = jRead.getJSONRooms();
                         ArrayList<String> localRooms = new ArrayList<String>();
 
-                        // TODO - remove if condition
-                        if (!peer.serverIsSearchingNetwork || peer.serverIsSearchingNetwork) {
+                        if (!peer.serverIsSearchingNetwork) {
                             //System.out.format(ANSI_YELLOW+"The peer you're connected to (%s) has the following rooms:%n"+ANSI_RESET, this.peer.connectedPeersIdentity);
 
                             // Print the room list from the server
@@ -111,7 +110,9 @@ public class GetMessageThread extends Thread {
                             //System.out.println(ANSI_YELLOW+"And the rooms you're locally hosting are:"+ANSI_RESET);
                             peer.getLocalRoomList();
                         }
-
+                        else {
+                            peer.neighborRooms.add(rooms);
+                        }
                     }
 
                     // Used for when a peer joins another room.
@@ -169,7 +170,6 @@ public class GetMessageThread extends Thread {
                             System.out.println("List of neighbors: " + peers);
                         }
                         else {
-                            //System.out.println("DEBUG: Neighbors = " + peers);
                             // Don't print anything out, just append it to our queue.
                             peer.neighborQueue.add(peers);
 //                            System.out.println("DEBUG FROM THREAD");
@@ -178,6 +178,9 @@ public class GetMessageThread extends Thread {
 //                                        System.out.println(y);
 //                                    }
 //                                }
+
+
+
                         }
                     }
 
