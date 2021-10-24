@@ -1,6 +1,7 @@
 package com.kvoli;
 
 import com.kvoli.base.*;
+import org.w3c.dom.ls.LSOutput;
 
 
 import java.io.*;
@@ -10,6 +11,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class Peer {
   private PrintWriter writer;
@@ -35,6 +37,10 @@ public class Peer {
   protected String serverIdentity;
   protected String serverIP;
   protected String connectedPeersIdentity;
+  protected boolean serverIsSearchingNetwork = false;
+
+  // Used for searchNetwork()
+  protected List<ArrayList<String>> neighborQueue = new ArrayList<ArrayList<String>>();
 
   private boolean acceptConnections = false;
 
@@ -93,7 +99,7 @@ public class Peer {
 
       // Testing purposes: create a test room
       clientCurrentRoom = "";
-      currentRooms.add(new Room("Test Room", serverIdentityInetAddress.toString()));
+      //currentRooms.add(new Room("Test Room", serverIdentityInetAddress.toString()));
 
       // The peers port will accept incoming connections within an infinite loop.
       while (acceptConnections) {
@@ -161,19 +167,42 @@ public class Peer {
    *  We connect to the first peer that is connected to us (e.g. peer B), then we ask peer B to hand over all the peers
    *  that are connected to it. TODO: Don't forget we have to use BFS. So, search each peer 1 peer away, then 2 away etc.
    */
-  protected synchronized void searchNetwork() {
-    // ArrayList containing the #list from each peer
-    ArrayList<List<String>> peerLists = new ArrayList<>();
+  protected void searchNetwork() throws InterruptedException {
+    // Enabling this causes roomlist in GetMessageThread to save list information to an arraylist.
+    serverIsSearchingNetwork = true;
 
+    // Enqueue our current connections to our queue
     // ArrayList containing the #listneighbors from each peer
-    ArrayList<String> peerNeighbors = new ArrayList<String>();
+    ArrayList<String> tempList = new ArrayList<String>();
+    for (ServerConnection c : currentConnections) {
+      String address = c.ipAddress + ":" + c.listenPort;
+      tempList.add(address);
+    }
+    neighborQueue.add(tempList);
+//
+////    for (ArrayList<String> x: neighborQueue) {
+////      for (String y : x) {
+////        System.out.println(y);
+////      }
+////    }
+//
+//    // While the queue is not empty
+    while (neighborQueue.size() > 0) {
+      for (ArrayList<String> peers : neighborQueue) {
+        for (String peer : peers) {
+          // Connect to peer
+          System.out.println(peer);
+        }
+      }
+      // Dequeue
+      neighborQueue.remove(0);
+    }
+
 
     // Iterate over all peers that are connected to us.
     for (ServerConnection c : currentConnections) {
       // Connect to this peer using a separate socket.
-      System.out.println("Listening port of that peer is : " + c.listenPort);
-      System.out.println("That peers IP is: " + c.ipAddress);
-      connectToPeer(c.ipAddress, c.listenPort, 6000); // TODO: Change this 6000.
+      connectToPeer(c.ipAddress, c.listenPort, 0); // TODO: 0 = random port
 
       writer = new PrintWriter(ToConnectedPeer, true);
       JSONWriter jWrite = new JSONWriter();
@@ -186,6 +215,27 @@ public class Peer {
 
       // Right now it prints to terminal. Need to figure out how to store as value.
       // Ask this peer to hand over its neighbours via the ListNeighbours request.
+      ClientPackets.ListNeighbors listN = new ClientPackets.ListNeighbors();
+      msg = jWrite.buildListNeighborsMsg(listN);
+      writer.println(msg);
+      writer.flush();
+      System.out.println("Message was flushed.");
+
+      // Send a quit message
+      clientToQuit = true;
+      ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+      msg = jWrite.buildQuitMsg(quitMsg);
+      writer.println(msg);
+      writer.flush();
+    }
+
+    // IMPORTANT. Need to sleep to allow the input thread to read whatever we flushed above.
+    TimeUnit.MILLISECONDS.sleep(100);
+    System.out.println("QUEUE");
+    for (ArrayList<String> x: neighborQueue) {
+      for (String y : x) {
+        System.out.println(y);
+      }
     }
   }
 
@@ -331,7 +381,10 @@ public class Peer {
     // Do not include the calling client in the list that is returned to the calling client.
     for (ServerConnection c: currentConnections) {
       if (!c.identity.equals(conn.identity)) {
-        neighbors.add(c.identity);
+        String listeningPort = Integer.toString(c.listenPort);
+        String ip = c.ipAddress;
+        String fullID = ip + ":" + listeningPort;
+        neighbors.add(fullID);
       }
     }
 
@@ -832,7 +885,7 @@ public class Peer {
             connectionAlive = false;
           }
 
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
           //close();
           connectionAlive = false;
         }

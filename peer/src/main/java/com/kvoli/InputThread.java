@@ -6,6 +6,7 @@ import com.kvoli.base.JSONWriter;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class InputThread extends Thread {
@@ -62,7 +63,7 @@ public class InputThread extends Thread {
                     try {
                         int destPort = Integer.parseInt(input);
                         System.out.println("---> Attempting to connect to: " + destIP + " " + destPort);
-                        peer.connectToPeer(destIP, destPort, 58900);
+                        peer.connectToPeer(destIP, destPort, 0);
                         System.out.println(ANSI_GREEN+"Connection successful."+ANSI_RESET);
                     } catch (Exception e) {
                         System.out.println("Invalid input (parseInt error)");
@@ -92,7 +93,7 @@ public class InputThread extends Thread {
             else if (text.contains("#listneighbors") && (peer.connectionEstablishedWithServer)) {
                 ClientPackets.ListNeighbors listN = new ClientPackets.ListNeighbors();
                 String msg = jWrite.buildListNeighborsMsg(listN);
-                System.out.format(ANSI_BLUE+"Sending #listneighbors JSON:"+ANSI_RESET+" %s%n", msg);
+                //System.out.format(ANSI_BLUE+"Sending #listneighbors JSON:"+ANSI_RESET+" %s%n", msg);
                 writer.println(msg);
                 writer.flush();
             }
@@ -146,12 +147,27 @@ public class InputThread extends Thread {
             }
 
             // Local command that allows the peer to find all the peers available to it
-            else if (text.contains("searchnetwork")) {
-                peer.searchNetwork();
+            else if (text.contains("search")) {
+                try {
+                    peer.searchNetwork();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
             // Input is not a command therefore it must be a message.
             else {
+                // DEBUGGING SEARCHNETWORK
+//                System.out.println("Queue for this peer. ");
+//                for (ArrayList<String> x: peer.neighborQueue) {
+//                    for (String y : x) {
+//                        System.out.println(y);
+//                    }
+//                }
+
+
+
+
                 // Condition for if we're connected to the 'server' peer
                 if (!text.equals("") && peer.connectionEstablishedWithServer) {
                     // Wrap this input into JSON.

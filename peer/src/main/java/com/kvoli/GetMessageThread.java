@@ -3,12 +3,14 @@ package com.kvoli;
 import com.kvoli.base.ClientPackets;
 import com.kvoli.base.JSONReader;
 import com.kvoli.base.JSONWriter;
+import org.w3c.dom.ls.LSOutput;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.security.spec.RSAOtherPrimeInfo;
 import java.util.ArrayList;
 
 public class GetMessageThread extends Thread {
@@ -42,7 +44,7 @@ public class GetMessageThread extends Thread {
                     String type = jRead.getJSONType();
                     String protocol = "null";
 
-                    System.out.println(ANSI_RED+"Received "+type+" JSON: "+ANSI_RESET + in);
+                    //System.out.println(ANSI_RED+"Received "+type+" JSON: "+ANSI_RESET + in);
 
                     // If we've received some form of input then we've established a connection.
                     this.peer.connectionEstablishedWithServer = true;
@@ -64,7 +66,7 @@ public class GetMessageThread extends Thread {
                         // Thus, I'm using the "Welcome" message that the server sends to determine our outgoing port.
 
                         // Upon initial connection the server tells us our identity (IP + outgoing port)
-                        if (serverAssignedIdentity.equals("NULL")) {
+                        if (serverAssignedIdentity.equals("NULL") && (!peer.serverIsSearchingNetwork)) {
                             serverAssignedIdentity = content;
 
                             // Send packet to inform the server of our listening address and port
@@ -78,12 +80,12 @@ public class GetMessageThread extends Thread {
                         }
 
                         // If it's our own message, prepend our room ID in front of our message.
-                        if (incomingIdentity.equals(serverAssignedIdentity)) {
+                        if (incomingIdentity.equals(serverAssignedIdentity) && (!peer.serverIsSearchingNetwork)) {
                             String room = "[" + myCurrentRoom + "] ";
                             System.out.println(room + incomingIdentity + ": " + content);
                         }
                         // Case for when it's someone else's message.
-                        else {
+                        else if (!peer.serverIsSearchingNetwork) {
                             System.out.println(ANSI_YELLOW+incomingIdentity+" says: "+ANSI_RESET+content);
                         }
                     }
@@ -92,18 +94,24 @@ public class GetMessageThread extends Thread {
                     else if (protocol.equals("roomlist")) {
                         ArrayList<String> rooms = jRead.getJSONRooms();
                         ArrayList<String> localRooms = new ArrayList<String>();
-                        System.out.format(ANSI_YELLOW+"The peer you're connected to (%s) has the following rooms:%n"+ANSI_RESET, this.peer.connectedPeersIdentity);
 
-                        // Print the room list from the server
-                        for (String room : rooms) {
-                            String roomName = jRead.getJSONRoomName(room);
-                            String roomCount = jRead.getJSONRoomCount(room);
-                            System.out.println("\t- Room: " + roomName + " with " + roomCount + " users.");
+                        // TODO - remove if condition
+                        if (!peer.serverIsSearchingNetwork || peer.serverIsSearchingNetwork) {
+                            //System.out.format(ANSI_YELLOW+"The peer you're connected to (%s) has the following rooms:%n"+ANSI_RESET, this.peer.connectedPeersIdentity);
+
+                            // Print the room list from the server
+                            System.out.println("Rooms from server:");
+                            for (String room : rooms) {
+                                String roomName = jRead.getJSONRoomName(room);
+                                String roomCount = jRead.getJSONRoomCount(room);
+                                System.out.println("\t- Room: " + roomName + " with " + roomCount + " users.");
+                            }
+
+                            // If this peer is hosting rooms locally then we should also return their local room list.
+                            //System.out.println(ANSI_YELLOW+"And the rooms you're locally hosting are:"+ANSI_RESET);
+                            peer.getLocalRoomList();
                         }
 
-                        // If this peer is hosting rooms locally then we should also return their local room list.
-                        System.out.println(ANSI_YELLOW+"And the rooms you're locally hosting are:"+ANSI_RESET);
-                        peer.getLocalRoomList();
                     }
 
                     // Used for when a peer joins another room.
@@ -157,7 +165,20 @@ public class GetMessageThread extends Thread {
                     // The response of a #listneighbors command
                     else if (protocol.equals("neighbors")) {
                         ArrayList<String> peers = jRead.readListNeighbors();
-                        System.out.println("List of neighbors: " + peers);
+                        if (!peer.serverIsSearchingNetwork) {
+                            System.out.println("List of neighbors: " + peers);
+                        }
+                        else {
+                            //System.out.println("DEBUG: Neighbors = " + peers);
+                            // Don't print anything out, just append it to our queue.
+                            peer.neighborQueue.add(peers);
+//                            System.out.println("DEBUG FROM THREAD");
+//                                for (ArrayList<String> x: peer.neighborQueue) {
+//                                    for (String y : x) {
+//                                        System.out.println(y);
+//                                    }
+//                                }
+                        }
                     }
 
                 }
