@@ -194,18 +194,27 @@ public class Peer {
   }
 
 
-  protected synchronized void sendMigration(String rooms, String hostIP, int hostListenPort) {
+  protected synchronized void sendMigration(String hostIP, int hostListenPort, String[] roomArray) {
     // First connect to the new host
     connectToPeer(hostIP, hostListenPort, 0);
     writer = new PrintWriter(ToConnectedPeer, true);
     JSONWriter jsonBuild = new JSONWriter();
 
+    // No room arguments supplied to the #migrate command. This is unaccepted.
+    if (roomArray.length == 0) {
+      System.out.println("You must specify rooms or write 'all'.");
+    }
 
-    // User can specify which rooms to migrate (or all of them)
-    if (rooms.equals("all")) {
+    // One can't write 'all' and then also specify rooms to migrate.
+    else if (roomArray[0].equals("all") && roomArray.length != 1) {
+      System.out.println("You can't write 'all' and then also specify rooms.");
+    }
+
+    // User has specified to migrate all rooms over.
+    else if (roomArray[0].equals("all") && roomArray.length == 1) {
       int totalRooms = currentRooms.size();
       int totalIdentities = currentConnections.size();
-
+      System.out.format("There are %d rooms, and %d peers to migrate.%n", totalRooms, totalIdentities);
       // Iterate through each room in currentRooms
       for (Room r: currentRooms) {
         // Send a JSON string of the below format
@@ -223,7 +232,7 @@ public class Peer {
         writer.flush();
       }
 
-      // Iterate through each connection in currentConnections
+      // TODO: Iterate through each connection in currentConnections
       for (ServerConnection c : currentConnections) {
         // Send the following JSON string
         // 'sender' : 'sender IP/port'
@@ -231,7 +240,6 @@ public class Peer {
         // 'roomName' : 'name'
         // 'totalIdentities': number
       }
-
 
       // Quit
       clientToQuit = true;
@@ -241,6 +249,29 @@ public class Peer {
       writer.flush();
     }
 
+    // Else, the peer has specified specific rooms to migrate over. The remaining unspecified rooms are lost I assume...?
+    else {
+      String sender = serverIdentity;
+      for (String a : roomArray) {
+        for (Room r: currentRooms) {
+          String roomName = r.getRoomName();
+          if (roomName.equals(a)) {
+            String serverMessage = jsonBuild.buildJSONMigrationRoom(sender, roomName, roomArray.length);
+            writer.println(serverMessage);
+            writer.flush();
+          }
+        }
+      }
+
+      // TODO: Iterate through each connection in currentConnections
+
+      // Quit as now all migrations have been made.
+      clientToQuit = true;
+      ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+      String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
+      writer.println(serverMessage);
+      writer.flush();
+    }
   }
 
 
@@ -265,6 +296,7 @@ public class Peer {
     // First check if we have received all rooms from the sender (former host).
     if (migratedRooms.size() == totalRooms) {
       // Begin construction of all the rooms
+      System.out.println("---> All rooms received. Begin construction:");
       for (String room : migratedRooms) {
         boolean roomAlreadyExists = false;
 
@@ -279,12 +311,13 @@ public class Peer {
         // If the room doesn't already exist then we can safely create it.
         if (!roomAlreadyExists) {
           currentRooms.add(new Room(room, serverIdentity));
-          System.out.println("DEBUG MIGRATION ROOM: Created room " + room + ". New owner: " + serverIdentity);
+          System.out.println(ANSI_GREEN+"- Created room " + room + ". New owner: " + serverIdentity+ANSI_RESET);
         }
       }
     }
     else {
       // We haven't received all rooms from the sender. We need to receive all rooms before we can begin construction.
+      System.out.println("---> Construction of rooms not commencing as not all rooms have been received yet.");
     }
   }
 

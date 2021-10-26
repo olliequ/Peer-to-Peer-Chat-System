@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class InputThread extends Thread {
@@ -173,15 +174,16 @@ public class InputThread extends Thread {
             else if (text.contains("migrate")) {
                 String input = text.replaceAll("#migrate", "");
                 input = input.stripLeading();
-
+                String[] portAndRooms = input.split("\\s+");
+                String[] roomArray = Arrays.copyOfRange(portAndRooms, 1, portAndRooms.length);
+//                for (String room : roomArray) {
+//                    System.out.println(room);
+//                }
                 // TODO: Hardcoded to make testing easier
-                String rooms = "all";
                 String hostIP = "0.0.0.0";
-                int hostListenPort = Integer.parseInt(input);
+                int hostListenPort = Integer.parseInt(portAndRooms[0]);
 
-                peer.sendMigration(rooms, hostIP, hostListenPort);
-
-
+                peer.sendMigration(hostIP, hostListenPort, roomArray);
             }
 
             // Input is not a command therefore it must be a message.

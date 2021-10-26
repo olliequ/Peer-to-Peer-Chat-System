@@ -38,6 +38,7 @@ public class GetMessageThread extends Thread {
 
             try {
                 String in = reader.readLine(); // Reads in JSON objects as they arrive
+                //System.out.println(in);
                 if (in != null) {
                     JSONReader jRead = new JSONReader();
                     jRead.readInput(in);
@@ -47,7 +48,6 @@ public class GetMessageThread extends Thread {
 
                     // If we've received some form of input then we've established a connection.
                     this.peer.connectionEstablishedWithServer = true;
-
 
                     try {
                         protocol = jRead.getJSONType();
@@ -135,6 +135,8 @@ public class GetMessageThread extends Thread {
                             peer.destSocket.close();
                             peer.FromConnectedPeer.close();
                             peer.ToConnectedPeer.close();
+                            getPeerMessages = false;
+                            peer.connectionEstablishedWithServer = false;
                         }
 
                         else if (former.equals(roomid) && (!peer.clientToQuit)) {
@@ -209,6 +211,7 @@ public class GetMessageThread extends Thread {
 
             } catch (IOException e) {
                 System.out.println("GetMessageThread exception when retrieving messages from peer");
+                e.printStackTrace();
 //                try {
 //                    // socket.close();
 //                    System.exit(0);
