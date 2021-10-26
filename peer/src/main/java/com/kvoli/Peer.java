@@ -516,7 +516,7 @@ public class Peer {
  protected synchronized void kickPeer (String peerToKick) {
    for (ServerConnection c : currentConnections) {
      if (peerToKick.equals(c.identity)) {
-       System.out.println("Kicking and banning "+peerToKick+" from this peer.");
+       System.out.println("---> Kicking and banning "+peerToKick+" from this peer.");
        bannedPeers.add(peerToKick);
        JSONWriter jsonBuild = new JSONWriter();
        String message = "You have been kicked and banned from connecting to this peer. Do not come back.";
