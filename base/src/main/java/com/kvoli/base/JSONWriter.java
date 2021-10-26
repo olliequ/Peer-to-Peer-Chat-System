@@ -185,6 +185,16 @@ public class JSONWriter {
         return msg;
     }
 
+    public String buildKickMsg (ClientPackets.Kick kick) {
+        String msg = null;
+        try {
+            msg = oMapper.writeValueAsString(kick);
+        } catch (JsonProcessingException e) {
+            System.out.println("Exception in JSONWriter buildQuitMsg");
+        }
+        return msg;
+    }
+
     public String buildQuitMsg (ClientPackets.Quit quit) {
         String msg = null;
         try {

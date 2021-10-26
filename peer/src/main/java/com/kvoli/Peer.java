@@ -8,6 +8,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.StandardSocketOptions;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class Peer {
   private PrintWriter writer;
 
-  protected Socket socket;
+  // protected Socket socket;
   // Destination (server) socket (i.e. the peer that we have connected to).
   protected Socket destSocket;
   // Input and output streams from the peer (server) that we are connected to.
@@ -49,6 +50,7 @@ public class Peer {
   // As a server we maintain a list of connections and a list of rooms we are aware of.
   private volatile List<ServerConnection> currentConnections = new ArrayList<>();
   private volatile List<Room> currentRooms = new ArrayList<>();
+  private volatile List<String> bannedPeers = new ArrayList<>();
 
   public static final String ANSI_RED = "\u001B[31m";
   public static final String ANSI_BLUE = "\u001B[34m";
@@ -85,6 +87,9 @@ public class Peer {
     try {
       // Bind serverSocket to a port. We're using port 0 so that the OS will pick a random port.
       serverSocket = new ServerSocket(0); // This is the socket that we listen on to receive incoming connections.
+      serverSocket.setOption(StandardSocketOptions.SO_REUSEPORT, true);
+      serverSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+      //serverSocket.setReuseAddress(true);
       acceptConnections = true;
 
       // From my understanding there are two ports. An INCOMING and an OUTGOING port.
@@ -107,9 +112,11 @@ public class Peer {
       while (acceptConnections) {
         // Accepted a connection from a peer. Generate new socket based off the encompassing ServerSocket -- accept it.
         Socket socket = serverSocket.accept();
-
+        socket.setOption(StandardSocketOptions.SO_REUSEPORT, true);
+        socket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+        // socket.setOption(StandardSocketOptions.SO_LINGER, 1);
         // Note that the port number we received is the clients OUTGOING port.
-        System.out.println(ANSI_CYAN+"\n---> Accepted connection from another peer who's using their port number: "+ANSI_RESET+ socket.getPort());
+        System.out.println(ANSI_CYAN+"---> Accepted connection from another peer who's using their port number: "+ANSI_RESET+ socket.getPort());
 
         // The connected peer's identity is a combination of their IP address and their outgoing port number
         String addressOfPeer = socket.getInetAddress().toString();
@@ -117,12 +124,27 @@ public class Peer {
         String clientIdentity = addressOfPeer + ':' + portOfPeer;
         System.out.println("\t- The identity of the peer that just connected to you is: " + clientIdentity);
         System.out.format("\t- Connected off of you on: %s:%d%n", socket.getLocalAddress(), socket.getLocalPort());
-
-        // Each peer that connects to this peer will have its own thread of execution.
-        // The connection will be able to handle itself.
-        ServerConnection currentConnection = new ServerConnection(socket, clientIdentity, "");
-        currentConnection.start();
-        connect(currentConnection);
+        for (String a : bannedPeers) {
+          System.out.format("Banned peer: %s%n", a);
+        }
+        if (bannedPeers.contains(clientIdentity)) {
+          System.out.println(ANSI_RED+"---> Oh wait -- this is a banned peer! It is not allowed to join us. Telling it to go away now."+ANSI_RESET);
+          PrintWriter writerr = new PrintWriter(socket.getOutputStream());
+          JSONWriter jsonBuilda = new JSONWriter();
+          String message = "What did I tell you? You're banned. Stop trying to connect here.";
+          ClientPackets.Kick kickthing = new ClientPackets.Kick(message);
+          String bannedMessage = jsonBuilda.buildKickMsg(kickthing);
+          writerr.println(bannedMessage);
+          writerr.flush();
+          socket.close();
+        }
+        else {
+          // Each peer that connects to this peer will have its own thread of execution.
+          // The connection will be able to handle itself.
+          ServerConnection currentConnection = new ServerConnection(socket, clientIdentity, "");
+          currentConnection.start();
+          connect(currentConnection);
+        }
       }
 
     } catch (IOException e) {
@@ -148,12 +170,15 @@ public class Peer {
       // Attempt to establish connection to the destination IP and Port
       // System.out.format("Connected to: %s, %d%n", this.destSocket.getInetAddress(), this.destSocket.getPort());
       this.destSocket = new Socket(destIP, destPort, serverIdentityInetAddress, outGooingPort);
+      this.destSocket.setOption(StandardSocketOptions.SO_REUSEPORT, true);
+      this.destSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
       this.ToConnectedPeer = destSocket.getOutputStream();
       this.FromConnectedPeer = destSocket.getInputStream();
       this.reader = new BufferedReader(new InputStreamReader(FromConnectedPeer));
       new GetMessageThread(this).start();
       //System.out.format("\t- Connected to: %s:%d%n", this.destSocket.getInetAddress(), this.destSocket.getPort());
       //System.out.format("\t- Connected from: %s:%d%n", this.destSocket.getLocalAddress(), this.destSocket.getLocalPort());
+      connectionEstablishedWithServer = true;
       connectedPeersIdentity = this.destSocket.getInetAddress()+":"+this.destSocket.getPort();
 
     } catch (IOException e) {
@@ -286,8 +311,14 @@ public class Peer {
    * NEW IN A2
    */
   protected synchronized void getLocalRoomList() {
-    for (Room r: currentRooms) {
-      System.out.println("\t- "+r.getRoomName() + " currently has " + r.getRoomSize() + " users.");
+    if (currentRooms.isEmpty()) {
+      System.out.println("There are no rooms currently locally existing. #create one to get started.");
+    }
+    else {
+      System.out.println("Below are the rooms you are currently hosting locally:");
+      for (Room r: currentRooms) {
+        System.out.println("\t- "+r.getRoomName() + " currently has " + r.getRoomSize() + " users.");
+      }
     }
   }
 
@@ -343,7 +374,36 @@ public class Peer {
     }
   }
 
+ protected synchronized void kickPeer (String peerToKick) {
+   for (ServerConnection c : currentConnections) {
+     if (peerToKick.equals(c.identity)) {
+       System.out.println("Kicking and banning "+peerToKick+" from this peer.");
+       bannedPeers.add(peerToKick);
+       JSONWriter jsonBuild = new JSONWriter();
+       String message = "You have been kicked and banned from connecting to this peer. Do not come back.";
+       ClientPackets.Kick kickthing = new ClientPackets.Kick(message);
+       String serverMessage = jsonBuild.buildKickMsg(kickthing);
+       c.justBeenKicked = true;
+       c.sendMessage(serverMessage + "\n");
+       // c.close();
+       break;
+     }
+     else {
+       System.out.println("No peer with the specified identity is connected to you, and thus no one could be kicked.");
+     }
+   }
+ }
 
+ protected synchronized void displayConnectedPeers () {
+    if (currentConnections.isEmpty()) {
+      System.out.println("Currently no one is connected to you.");
+    }
+    else {
+      for (ServerConnection a : currentConnections) {
+        System.out.println(a.identity);
+      }
+    }
+ }
 
   /**
    * A server can act as a client. As such, they need to be able to create their own rooms.
@@ -735,6 +795,7 @@ public class Peer {
     }
     // Disconnect the client.
     conn.close();
+    this.currentConnections.remove(conn);
   }
 
 
@@ -772,6 +833,7 @@ public class Peer {
     private int roomIndex;
     private String identity;
     private boolean gracefulDisconnection = false;
+    private boolean justBeenKicked = false;
 
     // Used for searchNetwork
     private String ipAddress;
@@ -907,7 +969,12 @@ public class Peer {
 
       if (!gracefulDisconnection) {
         // If client didn't disconnect via #quit then force close the connection.
-        System.out.println("DEBUG: Someone abruptly disconnected from you.");
+        if (!justBeenKicked) {
+          System.out.println("DEBUG: Someone abruptly disconnected from you.");
+        }
+        else {
+          System.out.println("Client kicked and has terminated connection on their side.");
+        }
         quit(this, roomID);
       }
     }

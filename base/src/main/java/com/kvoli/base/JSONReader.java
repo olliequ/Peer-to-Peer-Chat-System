@@ -19,7 +19,6 @@ public class JSONReader {
 
     public JSONReader() {}
 
-
     public void readInput(String in) {
         try {
             jNode = oMapper.readTree(in);
@@ -27,7 +26,6 @@ public class JSONReader {
             System.out.println("Exception on JSONReader - readInput");
         }
     }
-
 
     public String getJSONType() {
         return jNode.get("type").asText();
@@ -59,6 +57,10 @@ public class JSONReader {
 
     public String getJSONOwner() {
         return jNode.get("owner").asText();
+    }
+
+    public String getJSONKickMessage() {
+        return jNode.get("kickmessage").asText();
     }
 
 

@@ -13,7 +13,7 @@ public class InputThread extends Thread {
     private Peer peer;
     private PrintWriter writer;
     private BufferedReader reader;
-    private Socket socket;
+    // private Socket socket;
     private boolean getUserInput = true;
     //private String clientID;
     public static final String ANSI_RED = "\u001B[31m";
@@ -24,7 +24,7 @@ public class InputThread extends Thread {
 
     public InputThread(Peer peer) {
         this.peer = peer;
-        this.socket = peer.socket;
+        // this.socket = peer.socket;
     }
 
     /**
@@ -63,8 +63,8 @@ public class InputThread extends Thread {
                     try {
                         int destPort = Integer.parseInt(input);
                         System.out.println("---> Attempting to connect to: " + destIP + " " + destPort);
-                        peer.connectToPeer(destIP, destPort, 0);
-                        System.out.println(ANSI_GREEN+"Connection successful."+ANSI_RESET);
+                        peer.connectToPeer(destIP, destPort, 49000);
+                        // System.out.println(ANSI_GREEN+"Connection successful."+ANSI_RESET);
                     } catch (Exception e) {
                         System.out.println("Invalid input (parseInt error)");
                     }
@@ -90,12 +90,17 @@ public class InputThread extends Thread {
 
 
             // Peer can ping the server it is connected to and ask for a list of other people connected to the server.
-            else if (text.contains("#listneighbors") && (peer.connectionEstablishedWithServer)) {
-                ClientPackets.ListNeighbors listN = new ClientPackets.ListNeighbors();
-                String msg = jWrite.buildListNeighborsMsg(listN);
-                //System.out.format(ANSI_BLUE+"Sending #listneighbors JSON:"+ANSI_RESET+" %s%n", msg);
-                writer.println(msg);
-                writer.flush();
+            else if (text.contains("#listneighbors")) {
+                 if (peer.connectionEstablishedWithServer) {
+                     ClientPackets.ListNeighbors listN = new ClientPackets.ListNeighbors();
+                     String msg = jWrite.buildListNeighborsMsg(listN);
+                     //System.out.format(ANSI_BLUE+"Sending #listneighbors JSON:"+ANSI_RESET+" %s%n", msg);
+                     writer.println(msg);
+                     writer.flush();
+                 }
+                 else {
+                     System.out.println("You're not connected to anyone, and thus cannot retrieve a given peer's neighbours!");
+                 }
             }
 
 
@@ -134,6 +139,15 @@ public class InputThread extends Thread {
                 writer.flush();
             }
 
+            else if (text.contains("#kick")) {
+                String peerToKick = text.replaceAll("#kick", "");
+                peerToKick = peerToKick.stripLeading();
+                peer.kickPeer(peerToKick);
+            }
+
+            else if (text.contains("#listpeers")) {
+                peer.displayConnectedPeers();
+            }
 
             else if (text.contains("quit") && (peer.connectionEstablishedWithServer)) {
                 String input = text.replaceAll("#quit", "");

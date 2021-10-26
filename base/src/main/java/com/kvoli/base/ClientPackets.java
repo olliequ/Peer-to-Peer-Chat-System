@@ -72,6 +72,17 @@ public class ClientPackets {
         }
     }
 
+    @JsonTypeName("kick")
+    public static class Kick {
+        public String type = "kick";
+        public String kickmessage = "jokes";
+
+        public Kick() {}
+        public Kick(String kickmessage) {
+            this.kickmessage = kickmessage;
+        }
+    }
+
     @JsonTypeName("quit")
     public static class Quit {
         public String type = "quit";

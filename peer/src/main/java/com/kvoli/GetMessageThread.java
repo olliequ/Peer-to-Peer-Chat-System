@@ -17,7 +17,7 @@ public class GetMessageThread extends Thread {
     private Peer peer;
     private BufferedReader reader;
     private PrintWriter writer;
-    private Socket socket;
+    // private Socket socket;
     boolean getPeerMessages = true;
     private String serverAssignedIdentity = "NULL";             // Our IP and outgoing port number
     private String myCurrentRoom = "";
@@ -27,7 +27,7 @@ public class GetMessageThread extends Thread {
 
     public GetMessageThread(Peer peer) {
         this.peer = peer;
-        this.socket = peer.socket;
+        // this.socket = peer.socket;
         reader = new BufferedReader(new InputStreamReader(peer.FromConnectedPeer));
     }
 
@@ -43,7 +43,6 @@ public class GetMessageThread extends Thread {
                     jRead.readInput(in);
                     String type = jRead.getJSONType();
                     String protocol = "null";
-
                     //System.out.println(ANSI_RED+"Received "+type+" JSON: "+ANSI_RESET + in);
 
                     // If we've received some form of input then we've established a connection.
@@ -99,11 +98,16 @@ public class GetMessageThread extends Thread {
                             //System.out.format(ANSI_YELLOW+"The peer you're connected to (%s) has the following rooms:%n"+ANSI_RESET, this.peer.connectedPeersIdentity);
 
                             // Print the room list from the server
-                            System.out.println("Rooms from server:");
-                            for (String room : rooms) {
-                                String roomName = jRead.getJSONRoomName(room);
-                                String roomCount = jRead.getJSONRoomCount(room);
-                                System.out.println("\t- Room: " + roomName + " with " + roomCount + " users.");
+                            if (rooms.isEmpty()) {
+                                System.out.println("The peer you've connected to has no rooms currently created.");
+                            }
+                            else {
+                                System.out.println("Rooms from server and their occupancies:");
+                                for (String room : rooms) {
+                                    String roomName = jRead.getJSONRoomName(room);
+                                    String roomCount = jRead.getJSONRoomCount(room);
+                                    System.out.println("\t- "+roomName + " currently has " + roomCount + " users.");
+                                }
                             }
 
                             // If this peer is hosting rooms locally then we should also return their local room list.
@@ -127,6 +131,9 @@ public class GetMessageThread extends Thread {
                         if (roomid.equals("") && (peer.clientToQuit)) {
                             System.out.println("You have successfully disconnected from the host peer.");
                             peer.clientToQuit = false;
+                            peer.destSocket.close();
+                            peer.FromConnectedPeer.close();
+                            peer.ToConnectedPeer.close();
                         }
 
                         else if (former.equals(roomid) && (!peer.clientToQuit)) {
@@ -163,6 +170,22 @@ public class GetMessageThread extends Thread {
                         System.out.println();
                     }
 
+                    // For when a peer gets kicked.
+                    else if (protocol.equals("kick")) {
+                        String message = jRead.getJSONKickMessage();
+                        System.out.println("---> "+ANSI_RED+message+ANSI_RESET);
+                        System.out.println("Disconnected from peer. Try connect to another if you want.");
+                        // System.out.println(peer.destSocket.isConnected());
+                        //System.out.println(peer.destSocket.isClosed());
+                        this.peer.destSocket.close();
+//                        this.peer.ToConnectedPeer.close();
+//                        this.peer.FromConnectedPeer.close();
+                        //System.out.println(peer.destSocket.isClosed());
+                        peer.connectionEstablishedWithServer = false;
+                        //System.out.println("Sockets should be closed...");
+                        getPeerMessages = false;
+                    }
+
                     // The response of a #listneighbors command
                     else if (protocol.equals("neighbors")) {
                         ArrayList<String> peers = jRead.readListNeighbors();
@@ -188,13 +211,13 @@ public class GetMessageThread extends Thread {
 
             } catch (IOException e) {
                 System.out.println("GetMessageThread exception when retrieving messages from peer");
-                try {
-                    socket.close();
-                    System.exit(0);
-                } catch (IOException ex) {
-                    System.out.println("Exception occurred when closing socket.");
-                    ex.printStackTrace();
-                }
+//                try {
+//                    // socket.close();
+//                    System.exit(0);
+//                } catch (IOException ex) {
+//                    System.out.println("Exception occurred when closing socket.");
+//                    ex.printStackTrace();
+//                }
                 break;
             }
         }
