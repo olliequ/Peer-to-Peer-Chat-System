@@ -155,6 +155,21 @@ public class InputThread extends Thread {
                 }
             }
 
+            // Local command that begins the Room Migration process.
+            else if (text.contains("migrate")) {
+                String input = text.replaceAll("#migrate", "");
+                input = input.stripLeading();
+
+                // TODO: Hardcoded to make testing easier
+                String rooms = "all";
+                String hostIP = "0.0.0.0";
+                int hostListenPort = Integer.parseInt(input);
+
+                peer.sendMigration(rooms, hostIP, hostListenPort);
+
+
+            }
+
             // Input is not a command therefore it must be a message.
             else {
                 // DEBUGGING SEARCHNETWORK
