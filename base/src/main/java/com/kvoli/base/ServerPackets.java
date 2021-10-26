@@ -117,5 +117,33 @@ public class ServerPackets {
     }
 
 
+    @JsonTypeName("migrationroom")
+    public static class MigrationRoom {
+        public String type = "migrationroom";
+        public String sender;
+        public String roomName;
+        public int totalRooms;
 
+        public MigrationRoom(String sender, String roomName, int totalRooms) {
+            this.sender = sender;
+            this.roomName = roomName;
+            this.totalRooms = totalRooms;
+        }
+    }
+
+    @JsonTypeName("migrationidentity")
+    public static class MigrationIdentity {
+        public String type = "migrationidentity";
+        public String sender;
+        public String identity;
+        public String roomName;
+        public int totalIdentities;
+
+        public MigrationIdentity(String sender, String identity, String roomName, int totalIdentities) {
+            this.sender = sender;
+            this.identity = identity;
+            this.roomName = roomName;
+            this.totalIdentities = totalIdentities;
+        }
+    }
 }

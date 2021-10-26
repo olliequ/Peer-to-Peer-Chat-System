@@ -115,6 +115,7 @@ public class GetMessageThread extends Thread {
                             peer.getLocalRoomList();
                         }
                         else {
+                            //System.out.println(rooms);
                             peer.neighborRooms.add(rooms);
                         }
                     }
@@ -201,9 +202,6 @@ public class GetMessageThread extends Thread {
 //                                        System.out.println(y);
 //                                    }
 //                                }
-
-
-
                         }
                     }
 

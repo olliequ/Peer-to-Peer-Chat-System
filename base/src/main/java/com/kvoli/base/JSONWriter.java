@@ -1,4 +1,5 @@
 package com.kvoli.base;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -269,5 +270,44 @@ public class JSONWriter {
             System.out.println("Exception in JSONWriter buildHostChangeMsg");
         }
         return msg;
+    }
+
+
+    public String buildJSONMigrationRoom (String sender, String roomName, int totalRooms) {
+        String serverMessage = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try{
+            // Build a new JSON string out of these fields
+            ServerPackets.MigrationRoom migrateRooom = new ServerPackets.MigrationRoom(sender, roomName, totalRooms);
+            serverMessage = objectMapper.writeValueAsString(migrateRooom);
+            //System.out.println("Testing: " + serverMessage);
+            return serverMessage;
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error when writing MigrationRoom JSON message");
+        }
+        return serverMessage;
+    }
+
+    public String buildJSONMigrationIdentity(String sender, String identity, String roomName, int totalIdentities) {
+        String serverMessage = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try{
+            // Build a new JSON string out of these fields
+            ServerPackets.MigrationIdentity migrateIdentity = new ServerPackets.MigrationIdentity(sender, identity, roomName, totalIdentities);
+            serverMessage = objectMapper.writeValueAsString(migrateIdentity);
+            //System.out.println("Testing: " + serverMessage);
+            return serverMessage;
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error when writing MigrationIdentity JSON message");
+        }
+        return serverMessage;
     }
 }

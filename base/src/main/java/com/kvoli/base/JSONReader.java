@@ -145,4 +145,24 @@ public class JSONReader {
 
         return neighbors;
     }
+
+
+    // Used for Room Migration feature (sendMigration method of Peer.java)
+    public String getJSONMigrationSender() {
+        return jNode.get("sender").asText();
+    }
+    public String getJSONMigrationIdentity() {
+        return jNode.get("identity").asText();
+    }
+    public String getJSONMigrationRoomName() {
+        return jNode.get("roomName").asText();
+    }
+    public String getJSONMigrationTotalRooms() {
+        return jNode.get("totalRooms").asText();
+    }
+    public String getJSONMigrationTotalIdentities() {
+        return jNode.get("totalIdentities").asText();
+    }
+
+
 }
