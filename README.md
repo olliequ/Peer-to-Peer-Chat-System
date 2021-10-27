@@ -1,9 +1,9 @@
 # COMP90015 Project 2 Repository 
 
 ## Identities 
-**Name:** Sahil Tandon (SAHILT) | **Student ID:** 1186079
+**Name:** Sahil Tandon (SAHILT)  |  **Student ID:** 1186079
 
-**Name:** Oliver Quarm (oquarm) | **Student ID:** 834844
+**Name:** Oliver Quarm (oquarm)  |  **Student ID:** 834844
 
 ## Current functionality 
 - Peer can **#connect** to another peer.
@@ -16,11 +16,10 @@
 - Peers can **#quit** to disconnect from a server.
 - Peers can **#delete** rooms if they are the owner.
 - Peers can **#ListNeighbors** to see who else is connected to the peer they're connected to.
-
-## General todo 
-- Peer can **#SearchNetwork** to retrieve all rooms and who's in them from a chain of peers in a network.
 - Peer can **#help** to display available commands.
+
+## Remaining work: 
+- Peer can **#SearchNetwork** to retrieve all rooms and who's in them from a chain of peers in a network.
 - Allow PROPER command line input (e.g. port specification) and remove hardcodes.
 - Make sure work adheres to spec perfectly.
 - Clean stuff up.
-- REPORT.

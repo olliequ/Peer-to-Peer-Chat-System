@@ -230,9 +230,6 @@ public class InputThread extends Thread {
 //                    }
 //                }
 
-
-
-
                 // Condition for if we're connected to the 'server' peer
                 if (!text.equals("") && peer.connectionEstablishedWithServer) {
                     // Wrap this input into JSON.
