@@ -636,7 +636,36 @@ public class Peer {
     }
   }
 
-
+  protected synchronized void deleteLocalRoom (String roomToDelete) {
+    JSONWriter jsonBuild = new JSONWriter();
+    if (currentRooms.isEmpty()) {
+      System.out.println("There are no rooms existing, and so nothing to delete.");
+    }
+    else {
+      for (Room room : currentRooms) {
+        if (room.getRoomName().equals(roomToDelete)) {
+          if (room.getRoomSize() != 0) {
+            System.out.println("Moving occupants of "+roomToDelete+" to the null room.");
+            for (ServerConnection c : currentConnections) {
+              if (c.roomID.equals(roomToDelete)) {
+                String serverMessage = jsonBuild.buildJSONJoinRoom(c.identity, roomToDelete, "");
+                c.sendMessage(serverMessage + "\n");
+                c.roomID = "";
+              }
+            }
+          }
+          else {
+            System.out.println("Room is empty. No peers to move. Room has been deleted.");
+          }
+          currentRooms.remove(room);
+          break;
+        }
+        else {
+          System.out.println("The room you're trying to delete doesn't exist.");
+        }
+      }
+    }
+  }
 
   private synchronized void readMessage(String roomID, String msgContent, String msgIdentity) {
     // If the server is in the same room as the sender then they should be able to read the message

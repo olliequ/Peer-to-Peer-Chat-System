@@ -109,7 +109,17 @@ public class InputThread extends Thread {
                 String input = text.replaceAll("#create", "");
                 input = input.stripLeading();
                 peer.createLocalRoom(input, peer.serverIdentityInetAddress.toString());
+            }
 
+            else if (text.contains("#delete")) {
+                String input = text.replaceAll("#delete", "");
+                input = input.stripLeading();
+                if (peer.connectionEstablishedWithServer) {
+                    System.out.println("You can't issue a #delete if you're connected to a remote peer.");
+                }
+                else {
+                    peer.deleteLocalRoom(input);
+                }
             }
 
             else if (text.contains("#join")) {

@@ -150,7 +150,7 @@ public class GetMessageThread extends Thread {
                         }
 
                         else if (!former.equals("") && (roomid).equals("")) {
-                            System.out.println(identity + " left the room after disconnecting from the host peer.");
+                            System.out.println("You have been moved to the null room as "+former+" has been deleted.");
                         }
 
                         else {
