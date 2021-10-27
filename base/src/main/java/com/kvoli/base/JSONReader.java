@@ -59,6 +59,14 @@ public class JSONReader {
         return jNode.get("owner").asText();
     }
 
+    public int getJSONTotalIdentities() {
+        return jNode.get("totalIdentities").asInt();
+    }
+
+    public String getJSONSender() {
+        return jNode.get("sender").asText();
+    }
+
     public String getJSONKickMessage() {
         return jNode.get("kickmessage").asText();
     }

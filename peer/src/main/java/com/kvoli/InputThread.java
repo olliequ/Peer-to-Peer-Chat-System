@@ -64,7 +64,7 @@ public class InputThread extends Thread {
                     try {
                         int destPort = Integer.parseInt(input);
                         System.out.println("---> Attempting to connect to: " + destIP + " " + destPort);
-                        peer.connectToPeer(destIP, destPort, 49000);
+                        peer.connectToPeer(destIP, destPort, 0, false, "");
                         // System.out.println(ANSI_GREEN+"Connection successful."+ANSI_RESET);
                     } catch (Exception e) {
                         System.out.println("Invalid input (parseInt error)");
@@ -83,7 +83,7 @@ public class InputThread extends Thread {
                 }
                 else {
                     String msg = jWrite.buildListMsg(listRoom);
-                    System.out.format(ANSI_BLUE+"Sending #list JSON:"+ANSI_RESET+" %s%n", msg);
+                    // System.out.format(ANSI_BLUE+"Sending #list JSON:"+ANSI_RESET+" %s%n", msg);
                     writer.println(msg);
                     writer.flush();
                 }
@@ -124,7 +124,7 @@ public class InputThread extends Thread {
                 else {
                     ClientPackets.Join joinRoom = new ClientPackets.Join(input);
                     String msg = jWrite.buildJoinMsg(joinRoom);
-                    System.out.format(ANSI_BLUE+"Sending #join JSON:"+ANSI_RESET+" %s%n", msg);
+                    // System.out.format(ANSI_BLUE+"Sending #join JSON:"+ANSI_RESET+" %s%n", msg);
                     writer.println(msg);
                     writer.flush();
                 }
@@ -135,7 +135,7 @@ public class InputThread extends Thread {
                 input = input.stripLeading();
                 ClientPackets.Who who = new ClientPackets.Who(input);
                 String msg = jWrite.buildWhoMsg(who);
-                System.out.format(ANSI_BLUE+"Sending #who JSON:"+ANSI_RESET+" %s%n", msg);
+                // System.out.format(ANSI_BLUE+"Sending #who JSON:"+ANSI_RESET+" %s%n", msg);
                 writer.println(msg);
                 writer.flush();
             }
@@ -156,7 +156,7 @@ public class InputThread extends Thread {
                 peer.clientToQuit = true;
                 ClientPackets.Quit quitMsg = new ClientPackets.Quit();
                 String msg = jWrite.buildQuitMsg(quitMsg);
-                System.out.format(ANSI_BLUE+"Sending #quit JSON:"+ANSI_RESET+" %s%n", msg);
+                //System.out.format(ANSI_BLUE+"Sending #quit JSON:"+ANSI_RESET+" %s%n", msg);
                 writer.println(msg);
                 writer.flush();
             }
@@ -183,7 +183,22 @@ public class InputThread extends Thread {
                 String hostIP = "0.0.0.0";
                 int hostListenPort = Integer.parseInt(portAndRooms[0]);
 
-                peer.sendMigration(hostIP, hostListenPort, roomArray);
+                // No room arguments supplied to the #migrate command. This is unaccepted.
+                if (roomArray.length == 0) {
+                    System.out.println(ANSI_RED+"You must specify rooms or write 'all'."+ANSI_RESET);
+                }
+                // One can't write 'all' and then also specify rooms to migrate.
+                else if (roomArray[0].equals("all") && roomArray.length != 1) {
+                    System.out.println(ANSI_RED+"You can't write 'all' and then also specify rooms."+ANSI_RESET);
+                }
+                // Accepted input arguments, so let's call the migration method.
+                else {
+                    try {
+                        peer.sendMigration(hostIP, hostListenPort, roomArray);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
 
             // Input is not a command therefore it must be a message.

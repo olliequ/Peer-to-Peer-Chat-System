@@ -133,16 +133,20 @@ public class ServerPackets {
 
     @JsonTypeName("migrationidentity")
     public static class MigrationIdentity {
+        public String ip;
+        public int port;
         public String type = "migrationidentity";
         public String sender;
         public String identity;
-        public String roomName;
+        public String roomid;
         public int totalIdentities;
 
-        public MigrationIdentity(String sender, String identity, String roomName, int totalIdentities) {
+        public MigrationIdentity(String hostIP, int hostListenPort, String sender, String identity, String roomName, int totalIdentities) {
+            this.ip = hostIP;
+            this.port = hostListenPort;
             this.sender = sender;
             this.identity = identity;
-            this.roomName = roomName;
+            this.roomid = roomName;
             this.totalIdentities = totalIdentities;
         }
     }

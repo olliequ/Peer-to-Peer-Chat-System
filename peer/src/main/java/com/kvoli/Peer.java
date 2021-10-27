@@ -5,11 +5,13 @@ import org.w3c.dom.ls.LSOutput;
 
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.StandardSocketOptions;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -171,7 +173,7 @@ public class Peer {
    * @param destIP              Currently using 'localhost'. TODO: Unsure if this is correct.
    * @param destPort            Port number of the peer we want to connect to.
    */
-  protected synchronized void connectToPeer(String destIP, int destPort, int outGooingPort) {
+  protected synchronized void connectToPeer(String destIP, int destPort, int outGooingPort, boolean peerRemigratingOrNot, String remigrationRoom) {
     try {
       // Attempt to establish connection to the destination IP and Port
       // System.out.format("Connected to: %s, %d%n", this.destSocket.getInetAddress(), this.destSocket.getPort());
@@ -187,6 +189,17 @@ public class Peer {
       connectionEstablishedWithServer = true;
       connectedPeersIdentity = this.destSocket.getInetAddress()+":"+this.destSocket.getPort();
 
+      if (peerRemigratingOrNot) {
+          JSONWriter jWrite = new JSONWriter();
+          ClientPackets.Join joinRoom = new ClientPackets.Join(remigrationRoom);
+          String msg = jWrite.buildJoinMsg(joinRoom);
+          // System.out.format(ANSI_BLUE+"Sending #join JSON:"+ANSI_RESET+" %s%n", msg);
+          writer = new PrintWriter(ToConnectedPeer);
+          // System.out.println(this.destSocket.isClosed());
+          writer.println(msg);
+          writer.flush();
+      }
+
     } catch (IOException e) {
       System.out.println("Couldn't connect to peer.");
       e.printStackTrace();
@@ -194,51 +207,52 @@ public class Peer {
   }
 
 
-  protected synchronized void sendMigration(String hostIP, int hostListenPort, String[] roomArray) {
+  protected synchronized void sendMigration(String hostIP, int hostListenPort, String[] roomArray) throws InterruptedException {
     // First connect to the new host
-    connectToPeer(hostIP, hostListenPort, 0);
+    connectToPeer(hostIP, hostListenPort, 0, false, "");
     writer = new PrintWriter(ToConnectedPeer, true);
     JSONWriter jsonBuild = new JSONWriter();
-
-    // No room arguments supplied to the #migrate command. This is unaccepted.
-    if (roomArray.length == 0) {
-      System.out.println("You must specify rooms or write 'all'.");
-    }
-
-    // One can't write 'all' and then also specify rooms to migrate.
-    else if (roomArray[0].equals("all") && roomArray.length != 1) {
-      System.out.println("You can't write 'all' and then also specify rooms.");
-    }
+    List<String> roomArrayList = Arrays.asList(roomArray); // ArrayList of rooms we need to migrate.
+    String sender = serverIdentity;
 
     // User has specified to migrate all rooms over.
-    else if (roomArray[0].equals("all") && roomArray.length == 1) {
+    if (roomArray[0].equals("all") && roomArray.length == 1) {
       int totalRooms = currentRooms.size();
       int totalIdentities = currentConnections.size();
       System.out.format("There are %d rooms, and %d peers to migrate.%n", totalRooms, totalIdentities);
       // Iterate through each room in currentRooms
       for (Room r: currentRooms) {
-        // Send a JSON string of the below format
-        // 'sender' : 'sender IP/port'
-        // 'roomName' : 'name'
-        // 'totalRooms' : number            <- max number of rooms we are sending. Peer 2 will keep track of this.
-        //                                   when peer 2 has received all rooms it will reply with OK (later in code)
-
-        String sender = serverIdentity;
+        /**
+         * Send a JSON string of the below format
+         * 'sender' : 'sender IP/port'
+         * 'roomName' : 'name'
+         * 'totalRooms' : number    <- max number of rooms we are sending. Peer 2 will keep track of this.
+         *  When peer 2 has received all rooms it will reply with OK (later in code)
+         */
         String roomName = r.getRoomName();
         String serverMessage = jsonBuild.buildJSONMigrationRoom(sender, roomName, totalRooms);
-
         // Send message to the new host
         writer.println(serverMessage);
         writer.flush();
       }
 
-      // TODO: Iterate through each connection in currentConnections
+      int peersToMigrate = 0;
+      for (Room r: currentRooms ) {
+          peersToMigrate += r.getRoomSize();
+      }
+      System.out.println("Peers to migrate: "+peersToMigrate);
+      Thread.sleep(10000); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
       for (ServerConnection c : currentConnections) {
         // Send the following JSON string
         // 'sender' : 'sender IP/port'
         // 'identity' : 'IP/port'
         // 'roomName' : 'name'
         // 'totalIdentities': number
+        if (!c.roomID.equals("")) {
+          String serverMessage = jsonBuild.buildJSONMigrationIdentity(hostIP, hostListenPort, sender, c.identity, c.roomID, peersToMigrate);
+          c.sendMessage(serverMessage+ "\n");
+          c.close(); // May be able to delete this.
+        }
       }
 
       // Quit
@@ -251,7 +265,6 @@ public class Peer {
 
     // Else, the peer has specified specific rooms to migrate over. The remaining unspecified rooms are lost I assume...?
     else {
-      String sender = serverIdentity;
       for (String a : roomArray) {
         for (Room r: currentRooms) {
           String roomName = r.getRoomName();
@@ -264,6 +277,21 @@ public class Peer {
       }
 
       // TODO: Iterate through each connection in currentConnections
+      int peersToMigrate = 0;
+      for (Room r: currentRooms ) {
+        if (roomArrayList.contains(r.getRoomName())) {
+          peersToMigrate += r.getRoomSize();
+        }
+      }
+      System.out.println("Peers to migrate: "+peersToMigrate);
+      Thread.sleep(10000); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
+      for (ServerConnection c : currentConnections) {
+        if (roomArrayList.contains(c.roomID)) {
+          String serverMessage = jsonBuild.buildJSONMigrationIdentity(hostIP, hostListenPort, sender, c.identity, c.roomID, peersToMigrate);
+          c.sendMessage(serverMessage+ "\n");
+          c.close();
+        }
+      }
 
       // Quit as now all migrations have been made.
       clientToQuit = true;
@@ -378,7 +406,7 @@ public class Peer {
           String[] address = peer.split(":");                           // [0] = IP, [1] = port
 
           // Connect to peer
-          connectToPeer(address[0], Integer.parseInt(address[1]), 0);
+          connectToPeer(address[0], Integer.parseInt(address[1]), 0, false, "");
           writer = new PrintWriter(ToConnectedPeer, true);
           JSONWriter jWrite = new JSONWriter();
 
@@ -771,15 +799,12 @@ public class Peer {
       //broadcastRoom(serverMessage, "MainHall", null, conn.identity, true);
       //conn.sendMessage(newRoomContents + "\n");
 
-
       // Send RoomChange message to client and all other clients in the room
       String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, oldRoom, newRoom);
-      System.out.println(serverMessage);
+      //System.out.println(serverMessage);
       System.out.println(conn.identity + " moved to " + newRoom);
       //broadcastRoom(serverMessage, newRoom, null, conn.identity, true);
       conn.sendMessage(serverMessage + "\n");
-
-
     }
 
     // Logic to remove an existing client from their old room.
@@ -986,8 +1011,6 @@ public class Peer {
   }
 
 
-
-
   /**
    * All current clients have a 'ServerConnection' which is used to listen to each client.
    * Each client is identified by the String 'identity'
@@ -1041,7 +1064,7 @@ public class Peer {
             JSONReader jRead = new JSONReader();
             jRead.readInput(in);
             String type = jRead.getJSONType();   // Extract the value from the 'type' key field.
-            System.out.format(ANSI_RED+"Received "+type+" JSON: "+ANSI_RESET+"%s%n", in);
+            //System.out.format(ANSI_RED+"Received "+type+" JSON: "+ANSI_RESET+"%s%n", in);
 
             // The below if-else statements analyse the received JSON object type, and act accordingly.
 
@@ -1061,7 +1084,7 @@ public class Peer {
             }
 
             else if (type.equals("join")) {
-              System.out.format("JoinRoom JSON: %s%n", in);
+              // System.out.format("JoinRoom JSON: %s%n", in);
               String newRoom = jRead.getJSONRoomId();
               String currentRoom = roomID;
               joinRoom(this, currentRoom, newRoom);
@@ -1158,7 +1181,7 @@ public class Peer {
     }
 
     public void sendMessage (String msg) {
-      System.out.format(ANSI_BLUE+"Sending JSON:"+ANSI_RESET+" %s", msg);
+      //System.out.format(ANSI_BLUE+"Sending JSON:"+ANSI_RESET+" %s", msg);
       writer.print(msg);
       writer.flush(); // Empty the buffer and send the data over the network.
     }

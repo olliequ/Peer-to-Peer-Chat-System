@@ -22,6 +22,7 @@ public class GetMessageThread extends Thread {
     private String serverAssignedIdentity = "NULL";             // Our IP and outgoing port number
     private String myCurrentRoom = "";
     public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_BLUE = "\u001B[34m";
     public static final String ANSI_YELLOW = "\u001B[33m";
     public static final String ANSI_RESET = "\u001B[0m";
 
@@ -126,7 +127,7 @@ public class GetMessageThread extends Thread {
                         String former = jRead.getJSONFormerIdentity();
                         String roomid = jRead.getJSONRoomId();
 
-                        System.out.println("---> peer.clientToQuit: "+peer.clientToQuit);
+                        //System.out.println("---> peer.clientToQuit: "+peer.clientToQuit);
 
                         // The response of a quit command.
                         if (roomid.equals("") && (peer.clientToQuit)) {
@@ -207,6 +208,23 @@ public class GetMessageThread extends Thread {
                         }
                     }
 
+                    // The response of receiving a #migrationidentity JSON.
+                    else if (protocol.equals("migrationidentity")) {
+                        String migratingPeer = jRead.getJSONSender();
+                        String peerToMigrate = jRead.getJSONIdentity();
+                        String roomid = jRead.getJSONRoomId();
+                        int totalIdentities = jRead.getJSONTotalIdentities();
+                        System.out.println("---> We need to migrate to: "+jRead.getJSONIP()+":"+jRead.getJSONHost());
+                        peer.destSocket.close();
+                        peer.connectionEstablishedWithServer = false;
+                        getPeerMessages = false;
+                        try {
+                            System.out.println("---> Attempting to connect to: " + jRead.getJSONIP() + ":" + jRead.getJSONHost());
+                            peer.connectToPeer("localhost", Integer.parseInt(jRead.getJSONHost()), 0, true, jRead.getJSONRoomId());
+                        } catch (Exception e) {
+                            System.out.println("Error during re-migration.");
+                        }
+                    }
                 }
 
             } catch (IOException e) {

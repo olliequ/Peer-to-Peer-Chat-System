@@ -292,13 +292,13 @@ public class JSONWriter {
         return serverMessage;
     }
 
-    public String buildJSONMigrationIdentity(String sender, String identity, String roomName, int totalIdentities) {
+    public String buildJSONMigrationIdentity(String hostIP, int hostListenPort, String sender, String identity, String roomName, int totalIdentities) {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
 
         try{
             // Build a new JSON string out of these fields
-            ServerPackets.MigrationIdentity migrateIdentity = new ServerPackets.MigrationIdentity(sender, identity, roomName, totalIdentities);
+            ServerPackets.MigrationIdentity migrateIdentity = new ServerPackets.MigrationIdentity(hostIP, hostListenPort, sender, identity, roomName, totalIdentities);
             serverMessage = objectMapper.writeValueAsString(migrateIdentity);
             //System.out.println("Testing: " + serverMessage);
             return serverMessage;
