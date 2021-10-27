@@ -104,7 +104,6 @@ public class InputThread extends Thread {
                  }
             }
 
-
             else if (text.contains("#create")) {
                 String input = text.replaceAll("#create", "");
                 input = input.stripLeading();
@@ -209,6 +208,16 @@ public class InputThread extends Thread {
                         e.printStackTrace();
                     }
                 }
+            }
+
+            else if (text.contains("#help")) {
+                System.out.println(ANSI_CYAN+"The following commands are available to you:\n"+ANSI_RESET+
+                        "#connect IP[:port] [local port]: Connect to another peer. You can specify a port to connect to, and off of locally.\n- #join: Join a room" +
+                        "\n- #create room: Create a room locally.\n- #list: Retrieve both a local and a global list of rooms.\n- #who room: See who is in a specific room." +
+                        "\n- #kick peer: Kick a peer connected to you.\n- #migrate IP[:port] all || #migrate IP[:port] [room#1]...[room#n]: Migrate rooms you're hosting (and any peers inside them) to another peer. " +
+                        "\n\tSpecifying the 'all' flag will migrate all rooms you're hosting, otherwise you can choose specific rooms to migrate." +
+                        "\n- #quit: Disconnect from a peer you're connected to.\n- #delete room: Delete a room you're hosting.\n- #ListNeighbors: See who else is connected to the peer you're connected to." +
+                        "\n- #SearchNetwork: Retrieve all rooms and who's in them from a chain of peers in a network you're a part of.\n- #help: Lists all available commands you can use.");
             }
 
             // Input is not a command therefore it must be a message.
