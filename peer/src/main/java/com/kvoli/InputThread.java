@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 public class InputThread extends Thread {
@@ -54,20 +55,47 @@ public class InputThread extends Thread {
 
             // Command parsing
             if (text.contains("#connect")) {
+                String destIP = "localhost";   // TODO: destination IP is currently hardcoded to make testing easier.
                 String input = text.replaceAll("#connect", "");
                 input = input.stripLeading();
-                String destIP = "localhost";   // TODO: destination IP is currently hardcoded to make testing easier.
-                if (input == "") {
+                String[] connectArguments = input.split("\\s+");
+                List<String> connectArgumentsAL = Arrays.asList(connectArguments);
+
+//                int destinationPort = Integer.parseInt(input);
+//                System.out.println("---> Attempting to connect to: " + destIP + " " + destinationPort);
+//                peer.connectToPeer(destIP, destinationPort, 0, false, "");
+
+                if (connectArgumentsAL.get(0).equals("")) {
                     System.out.println("You need to enter an IP address and Port Number. You can't connect to nothing!");
                 }
+                else if (connectArgumentsAL.size()>2) {
+                    System.out.println("Too many arguments supplied.");
+                }
+                else if (connectArgumentsAL.size()==1) {
+                    String[] firstArgument = connectArgumentsAL.get(0).split(":");
+                    // Only IP provided and nothing else.
+                    if (firstArgument.length == 1) {
+                        System.out.println("---> Attempting to connect to: " + firstArgument[0]);
+                        peer.connectToPeer(firstArgument[0], 4444, 0, false, "");
+                    }
+                    // Only IP and its port provided. Outgoing port not provided.
+                    else {
+                        System.out.println("---> Attempting to connect to: " + firstArgument[0] + ":" + firstArgument[1]);
+                        peer.connectToPeer(firstArgument[0], Integer.parseInt(firstArgument[1]), 0, false, "");
+                    }
+                }
                 else {
-                    try {
+                    String[] firstArgument = connectArgumentsAL.get(0).split(":");
+                    // IP of peer supplied (but not a port) and an outgoing port.
+                    if (firstArgument.length == 1 && connectArgumentsAL.size() == 2) {
+                        System.out.println("---> Attempting to connect to: " + firstArgument[0]+" on outgoing port: "+connectArgumentsAL.get(1));
+                        peer.connectToPeer(firstArgument[0], 4444, Integer.parseInt(connectArgumentsAL.get(1)), false, "");
+                    }
+                    // IP of peer supplied, its port, and an outgoing port.
+                    else {
                         int destPort = Integer.parseInt(input);
-                        System.out.println("---> Attempting to connect to: " + destIP + " " + destPort);
-                        peer.connectToPeer(destIP, destPort, 0, false, "");
-                        // System.out.println(ANSI_GREEN+"Connection successful."+ANSI_RESET);
-                    } catch (Exception e) {
-                        System.out.println("Invalid input (parseInt error)");
+                        System.out.println("---> Attempting to connect to: " + destIP + ":" + destPort+" on outgoing port "+connectArgumentsAL.get(1));
+                        peer.connectToPeer(firstArgument[0], Integer.parseInt(firstArgument[1]), Integer.parseInt(connectArgumentsAL.get(1)), false, "");
                     }
                 }
             }
