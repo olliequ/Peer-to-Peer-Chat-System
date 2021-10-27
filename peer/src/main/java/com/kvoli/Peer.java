@@ -206,7 +206,6 @@ public class Peer {
     }
   }
 
-
   protected synchronized void sendMigration(String hostIP, int hostListenPort, String[] roomArray) throws InterruptedException {
     // First connect to the new host
     connectToPeer(hostIP, hostListenPort, 0, false, "");
@@ -255,7 +254,8 @@ public class Peer {
         }
       }
 
-      // Quit
+      // Delete rooms locally and #quit as now all migrations have been made.
+      currentRooms.clear();
       clientToQuit = true;
       ClientPackets.Quit quitMsg = new ClientPackets.Quit();
       String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
@@ -276,7 +276,6 @@ public class Peer {
         }
       }
 
-      // TODO: Iterate through each connection in currentConnections
       int peersToMigrate = 0;
       for (Room r: currentRooms ) {
         if (roomArrayList.contains(r.getRoomName())) {
@@ -293,7 +292,12 @@ public class Peer {
         }
       }
 
-      // Quit as now all migrations have been made.
+      // Delete rooms locally and #quit as now all migrations have been made.
+      for (Room room : currentRooms) {
+        if (roomArrayList.contains(room.getRoomName())) {
+          currentRooms.remove(room);
+        }
+      }
       clientToQuit = true;
       ClientPackets.Quit quitMsg = new ClientPackets.Quit();
       String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
