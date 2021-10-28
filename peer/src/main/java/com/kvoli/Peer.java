@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 public class Peer {
   private PrintWriter writer;
 
-  // protected Socket socket;
+  //protected Socket socket;          // TODO: I RE-ENABLED THIS FOR socket.close();
   // Destination (server) socket (i.e. the peer that we have connected to).
   protected Socket destSocket;
   // Input and output streams from the peer (server) that we are connected to.
@@ -31,7 +31,6 @@ public class Peer {
   protected boolean clientToQuit = false;                         // When we want to #quit we change this value.
 
   // All peers can be servers. A peer must establish their own server identity.
-
   protected InetAddress serverIdentityInetAddress;
   protected int serverIdentityListeningPort;
   protected String serverIdentity;
@@ -41,17 +40,14 @@ public class Peer {
   protected boolean serverIsGettingRooms = false;
 
   // Used for searchNetwork()
-  /// List<String> neighborQueue2 = Collections.synchronizedList(new ArrayList<String>());    deleted
-
   protected volatile List<ArrayList<String>> neighborQueue = new ArrayList<ArrayList<String>>();
   protected List<ArrayList<String>> neighborRooms = new ArrayList<ArrayList<String>>();
-
-  private boolean acceptConnections = false;
 
   // As a server we maintain a list of connections and a list of rooms we are aware of.
   private volatile List<ServerConnection> currentConnections = new ArrayList<>();
   private volatile List<Room> currentRooms = new ArrayList<>();
   private volatile List<String> bannedPeers = new ArrayList<>();
+  private boolean acceptConnections = false;
 
   public static final String ANSI_RED = "\u001B[31m";
   public static final String ANSI_BLUE = "\u001B[34m";
@@ -63,7 +59,6 @@ public class Peer {
   public final int outgoingPort = 54000;
   // Old code from A1
   public static int PORT = 4444;
-
 
   // Used for Room Migration feature
   boolean migrationInProgress = false;
@@ -282,7 +277,7 @@ public class Peer {
         }
       }
       System.out.println("Peers to migrate: "+peersToMigrate);
-      Thread.sleep(10000); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
+      Thread.sleep(200); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
       for (ServerConnection c : currentConnections) {
         if (roomArrayList.contains(c.roomID)) {
           String serverMessage = jsonBuild.buildJSONMigrationIdentity(hostIP, hostListenPort, sender, c.identity, c.roomID, peersToMigrate);
@@ -319,7 +314,6 @@ public class Peer {
     // Lock the migration feature for this host. We don't want some other random peer
     // to perform a concurrent migration on us while we're dealing with the existing sender.
     migrationInProgress = true;               // To be unlocked by handleMigratedIdentities when it finishes.
-
 
     // Add this room to our list.
     migratedRooms.add(roomName);
@@ -369,8 +363,6 @@ public class Peer {
 
 
 
-
-
   /**
    *  The peer should crawl over all peers accessible in the network using a breadth-first recursion strategy. We connect to
    *  each peer (using a separate connection to the peer's existing one -- if there is one that is) and find the rooms
@@ -383,24 +375,79 @@ public class Peer {
     serverIsSearchingNetwork = true;
 
     // Store neighbors
-    //List<ArrayList<String>> peerData = new ArrayList<ArrayList<String>>();
     // ArrayList containing the #listneighbors from each peer
     ArrayList<String> tempList = new ArrayList<String>();
 
-    //ArrayList<String> peerInfo = new ArrayList<String>();
-
-    // Enqueue our current connections to our queue
-    //System.out.println("DEBUG 1: CONSTRUCTING LIST");
+    // Enqueue our immediate current connections to our queue
     for (ServerConnection c : currentConnections) {
       String address = c.ipAddress + ":" + c.listenPort;
       tempList.add(address);
-//      neighborQueue2.add(address);
+
     }
     neighborQueue.add(tempList);
-    //peerData.add(tempList);
+
+    // While the queue is not empty
+    while (neighborQueue.size() > 0) {
+      try {
+        // For the list of peers a neighbor has...
+        for (ArrayList<String> peers : neighborQueue) {
+          String[] addressOfLastPeer = null;                // Address of last peer in the below loop
+
+          // For each peer in this list of peers...
+          for (String peer : peers) {
+            // Peer addresses are in the format IP:Port
+            // Extract both IP and Port from the string
+            String[] address = peer.split(":");                                       // [0] = IP, [1] = port
+            addressOfLastPeer = address;
+
+            // Connect to peer
+            connectToPeer(address[0], Integer.parseInt(address[1]), 0, false, "");
+            writer = new PrintWriter(ToConnectedPeer, true);
+            JSONWriter jWrite = new JSONWriter();
+
+            // Ask this peer to hand over its rooms via the List command.
+            ClientPackets.List listRoom = new ClientPackets.List();
+            String msg = jWrite.buildListMsg(listRoom);
+            writer.println(msg);
+            writer.flush();
+
+            // Ask this peer to hand over its neighbours via the ListNeighbours request.
+            ClientPackets.ListNeighbors listN = new ClientPackets.ListNeighbors();
+            msg = jWrite.buildListNeighborsMsg(listN);
+            writer.println(msg);
+            writer.flush();
+
+            // Print out the name of this peer
+            System.out.println(peer);
+
+            // RoomList in GetMessageThread will automatically print out the rooms for this peer.
+            // But if multiple peers are connected to the same host we need to put the thread to sleep or else
+            // nothing gets printed.
+            // Problem is this will trigger an exception.
+            // TimeUnit.MILLISECONDS.sleep(100);
+
+            // Send a quit message
+            clientToQuit = true;
+            ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+            msg = jWrite.buildQuitMsg(quitMsg);
+            writer.println(msg);
+            writer.flush();
+          }
+        }
+      } catch (Exception e) {
+        System.out.println("Exception in search method.");
+      }
+
+      // Dequeue
+      TimeUnit.MILLISECONDS.sleep(100);
+      neighborQueue.remove(0);
+//      // IMPORTANT. Need to sleep to allow the input thread to read whatever we flushed above.
+//      TimeUnit.MILLISECONDS.sleep(100);
 
 
 
+      // Can delete below....
+      // Was trying stuff with iterator. No luck...
 //    Iterator<ArrayList<String>> neighborPeers = neighborQueue.iterator();
 //    while (neighborPeers.hasNext()) {
 //      Iterator<String> listOfPeers = neighborPeers.next().iterator();
@@ -442,77 +489,6 @@ public class Peer {
 //      neighborPeers.remove();
 //    }
 
-
-    // While the queue is not empty
-    System.out.println("DEBUG 2: ENTERING WHILE LOOP");
-    while (neighborQueue.size() > 0) {
-      try {
-        // For the list of peers a neighbor has...
-        for (ArrayList<String> peers : neighborQueue) {
-
-          if (peers.size())
-
-          // For each peer in this list of peers...
-          for (String peer : peers) {
-            // Peer addresses are in the format IP:Port
-            // Extract both IP and Port from the string
-            String[] address = peer.split(":");                                       // [0] = IP, [1] = port
-
-            // Connect to peer
-            connectToPeer(address[0], Integer.parseInt(address[1]), 0, false, "");
-            writer = new PrintWriter(ToConnectedPeer, true);
-            JSONWriter jWrite = new JSONWriter();
-
-            // Ask this peer to hand over its rooms via the List command.
-            ClientPackets.List listRoom = new ClientPackets.List();
-            String msg = jWrite.buildListMsg(listRoom);
-            writer.println(msg);
-            writer.flush();
-
-            // Ask this peer to hand over its neighbours via the ListNeighbours request.
-            ClientPackets.ListNeighbors listN = new ClientPackets.ListNeighbors();
-            msg = jWrite.buildListNeighborsMsg(listN);
-            writer.println(msg);
-            writer.flush();
-
-            // Print out the name of this peer
-            System.out.println(peer);
-
-            // RoomList in GetMessageThread will automatically print out the rooms for this peer.
-            // However,
-
-            // If our string has more than one peer we need to put the loop to sleep to give GMT time to print
-            if (peers.size() > 1) {
-              try {
-                TimeUnit.MILLISECONDS.sleep(100);
-              } catch (Exception e) {
-                System.out.println("Caught");
-              }
-            }
-
-            // Send a quit message
-            clientToQuit = true;
-            ClientPackets.Quit quitMsg = new ClientPackets.Quit();
-            msg = jWrite.buildQuitMsg(quitMsg);
-            writer.println(msg);
-            writer.flush();
-          }
-        }
-      } catch (Exception e) {
-      }
-
-
-
-
-      // Dequeue
-      TimeUnit.MILLISECONDS.sleep(100);
-      //System.out.println(neighborRooms.toString());
-      neighborQueue.remove(0);
-//      neighborRooms.remove(0);
-
-//      System.out.println(neighborQueue.toString());
-//      // IMPORTANT. Need to sleep to allow the input thread to read whatever we flushed above.
-//      TimeUnit.MILLISECONDS.sleep(100);
     }
     // Reset
     neighborQueue = new ArrayList<ArrayList<String>>();
@@ -520,49 +496,7 @@ public class Peer {
   }
 
 
-
-
-
-      // Store the identity of the peers neighbor and the rooms that they are hosting
-//      for (ArrayList<String> peers: neighborQueue) {
-//        // Add the initial neighbor
-//        if (peers.size() > 0) {
-//          for (String x : tempList) {
-//            peerInfo.add(x);
-//          }
-//          tempList = new ArrayList<String>();             // Reset
-//        }
-//
-//        for (String peer : peers) {
-//          System.out.println(peer);
-//          peerInfo.add(peer);
-//        }
-//      }
-//    }
-//
-//    // TODO: PROBLEM: PEERS AND ROOMS ARE OUT OF SYNC...
-//    System.out.println("DEBUG 3: PRINTING FINAL OUTPUT");
-//    for (String peer: peerInfo) {
-//      System.out.println(peer);
-//    }
-//
-//    System.out.println("Rooms");
-//    for (ArrayList<String> x: neighborRooms) {
-//      System.out.println(x);
-//    }
-
-//    System.out.println("DEBUG 3: PRINTING FINAL OUTPUT");
-//    for (ArrayList<String> peers: peerData) {
-//      for (String peer : peers) {
-//        System.out.println(peer);
-//      }
-//    }
-//
-//    System.out.println("Rooms");
-//    for (ArrayList<String> x: neighborRooms) {
-//      System.out.println(x);
-//    }
-
+  
 
 
   /**
@@ -1299,10 +1233,6 @@ public class Peer {
       writer.flush(); // Empty the buffer and send the data over the network.
     }
 
-//    public void getList() {
-//      List<String> roomContents = new ArrayList<String>();
-//      getLocalRoomList();
-//    }
 
     public void close() {
       try {

@@ -17,7 +17,7 @@ public class GetMessageThread extends Thread {
     private Peer peer;
     private BufferedReader reader;
     private PrintWriter writer;
-    // private Socket socket;
+    //private Socket socket;                      // TODO: I RE-ENABLED THIS FOR socket.close();
     boolean getPeerMessages = true;
     private String serverAssignedIdentity = "NULL";             // Our IP and outgoing port number
     private String myCurrentRoom = "";
@@ -28,7 +28,7 @@ public class GetMessageThread extends Thread {
 
     public GetMessageThread(Peer peer) {
         this.peer = peer;
-        // this.socket = peer.socket;
+        //this.socket = peer.socket;                  // TODO: I RE-ENABLED THIS FOR socket.close();
         reader = new BufferedReader(new InputStreamReader(peer.FromConnectedPeer));
     }
 
@@ -233,15 +233,13 @@ public class GetMessageThread extends Thread {
                 }
 
             } catch (IOException e) {
-                System.out.println("GetMessageThread exception when retrieving messages from peer");
+                System.out.println();
+                System.out.println("Error occurred when retrieving message from the server.");
+                System.out.println("You have been disconnected from the server.");
+                peer.connectionEstablishedWithServer = false;
+                System.out.println("You can try reconnecting to another peer.");
                 //e.printStackTrace();
-//                try {
-//                    // socket.close();
-//                    System.exit(0);
-//                } catch (IOException ex) {
-//                    System.out.println("Exception occurred when closing socket.");
-//                    ex.printStackTrace();
-//                }
+                //System.exit(0);
                 break;
             }
         }
