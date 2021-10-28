@@ -196,6 +196,7 @@ public class GetMessageThread extends Thread {
                         if (!peer.serverIsSearchingNetwork) {
                             System.out.println("List of neighbors: " + peers);
                         }
+                        // If peer searching network
                         else {
                             // Don't print anything out, just append it to our queue.
                             peer.neighborQueue.add(peers);
@@ -229,7 +230,7 @@ public class GetMessageThread extends Thread {
 
             } catch (IOException e) {
                 System.out.println("GetMessageThread exception when retrieving messages from peer");
-                e.printStackTrace();
+                //e.printStackTrace();
 //                try {
 //                    // socket.close();
 //                    System.exit(0);

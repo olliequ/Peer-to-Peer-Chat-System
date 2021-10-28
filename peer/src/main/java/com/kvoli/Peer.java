@@ -95,8 +95,8 @@ public class Peer {
     try {
       // Bind serverSocket to a port. We're using port 0 so that the OS will pick a random port.
       serverSocket = new ServerSocket(0); // This is the socket that we listen on to receive incoming connections.
-      serverSocket.setOption(StandardSocketOptions.SO_REUSEPORT, true);
-      serverSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+      //serverSocket.setOption(StandardSocketOptions.SO_REUSEPORT, true);
+      //serverSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
       //serverSocket.setReuseAddress(true);
       acceptConnections = true;
 
@@ -120,8 +120,8 @@ public class Peer {
       while (acceptConnections) {
         // Accepted a connection from a peer. Generate new socket based off the encompassing ServerSocket -- accept it.
         Socket socket = serverSocket.accept();
-        socket.setOption(StandardSocketOptions.SO_REUSEPORT, true);
-        socket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+//        socket.setOption(StandardSocketOptions.SO_REUSEPORT, true);
+//        socket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
         // socket.setOption(StandardSocketOptions.SO_LINGER, 1);
         // Note that the port number we received is the clients OUTGOING port.
         System.out.println(ANSI_CYAN+"---> Accepted connection from another peer who's using their port number: "+ANSI_RESET+ socket.getPort());
@@ -178,8 +178,8 @@ public class Peer {
       // Attempt to establish connection to the destination IP and Port
       // System.out.format("Connected to: %s, %d%n", this.destSocket.getInetAddress(), this.destSocket.getPort());
       this.destSocket = new Socket(destIP, destPort, serverIdentityInetAddress, outGooingPort);
-      this.destSocket.setOption(StandardSocketOptions.SO_REUSEPORT, true);
-      this.destSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+//      this.destSocket.setOption(StandardSocketOptions.SO_REUSEPORT, true);
+//      this.destSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
       this.ToConnectedPeer = destSocket.getOutputStream();
       this.FromConnectedPeer = destSocket.getInputStream();
       this.reader = new BufferedReader(new InputStreamReader(FromConnectedPeer));
@@ -240,7 +240,7 @@ public class Peer {
           peersToMigrate += r.getRoomSize();
       }
       System.out.println("Peers to migrate: "+peersToMigrate);
-      Thread.sleep(10000); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
+      Thread.sleep(100); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
       for (ServerConnection c : currentConnections) {
         // Send the following JSON string
         // 'sender' : 'sender IP/port'
@@ -391,7 +391,7 @@ public class Peer {
     ArrayList<String> peerInfo = new ArrayList<String>();
 
     // Enqueue our current connections to our queue
-    System.out.println("DEBUG 1: CONSTRUCTING LIST");
+    //System.out.println("DEBUG 1: CONSTRUCTING LIST");
     for (ServerConnection c : currentConnections) {
       String address = c.ipAddress + ":" + c.listenPort;
       tempList.add(address);
@@ -403,7 +403,9 @@ public class Peer {
     // While the queue is not empty
     System.out.println("DEBUG 2: ENTERING WHILE LOOP");
     while (neighborQueue.size() > 0) {
+      // For the list of peers a neighbor has...
       for (ArrayList<String> peers : neighborQueue) {
+        // For each peer in this list of peers...
         for (String peer : peers) {
           // Peer addresses are in the format IP:Port
           // Extract both IP and Port from the string
@@ -426,6 +428,11 @@ public class Peer {
           writer.println(msg);
           writer.flush();
 
+          System.out.println(peer);
+          TimeUnit.MILLISECONDS.sleep(100);
+          System.out.println(neighborRooms.toString());
+
+
           // Send a quit message
           clientToQuit = true;
           ClientPackets.Quit quitMsg = new ClientPackets.Quit();
@@ -436,40 +443,48 @@ public class Peer {
       }
 
       // Dequeue
+      //TimeUnit.MILLISECONDS.sleep(100);
       neighborQueue.remove(0);
 
-      // IMPORTANT. Need to sleep to allow the input thread to read whatever we flushed above.
-      TimeUnit.MILLISECONDS.sleep(100);
+//      System.out.println(neighborQueue.toString());
+//      // IMPORTANT. Need to sleep to allow the input thread to read whatever we flushed above.
+//      TimeUnit.MILLISECONDS.sleep(100);
+
+
+    }
+  }
+
+
+
+
 
       // Store the identity of the peers neighbor and the rooms that they are hosting
-      for (ArrayList<String> peers: neighborQueue) {
-        // Add the initial neighbor
-        if (peers.size() > 0) {
-          for (String x : tempList) {
-            peerInfo.add(x);
-          }
-          tempList = new ArrayList<String>();             // Reset
-        }
-
-        for (String peer : peers) {
-          System.out.println(peer);
-          peerInfo.add(peer);
-        }
-      }
-    }
-
-    // TODO: PROBLEM: PEERS AND ROOMS ARE OUT OF SYNC...
-    System.out.println("DEBUG 3: PRINTING FINAL OUTPUT");
-    for (String peer: peerInfo) {
-      System.out.println(peer);
-    }
-
-    System.out.println("Rooms");
-    for (ArrayList<String> x: neighborRooms) {
-      System.out.println(x);
-    }
-
-
+//      for (ArrayList<String> peers: neighborQueue) {
+//        // Add the initial neighbor
+//        if (peers.size() > 0) {
+//          for (String x : tempList) {
+//            peerInfo.add(x);
+//          }
+//          tempList = new ArrayList<String>();             // Reset
+//        }
+//
+//        for (String peer : peers) {
+//          System.out.println(peer);
+//          peerInfo.add(peer);
+//        }
+//      }
+//    }
+//
+//    // TODO: PROBLEM: PEERS AND ROOMS ARE OUT OF SYNC...
+//    System.out.println("DEBUG 3: PRINTING FINAL OUTPUT");
+//    for (String peer: peerInfo) {
+//      System.out.println(peer);
+//    }
+//
+//    System.out.println("Rooms");
+//    for (ArrayList<String> x: neighborRooms) {
+//      System.out.println(x);
+//    }
 
 //    System.out.println("DEBUG 3: PRINTING FINAL OUTPUT");
 //    for (ArrayList<String> peers: peerData) {
@@ -482,7 +497,7 @@ public class Peer {
 //    for (ArrayList<String> x: neighborRooms) {
 //      System.out.println(x);
 //    }
-  }
+
 
 
   /**
