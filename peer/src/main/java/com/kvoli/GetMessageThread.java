@@ -118,6 +118,11 @@ public class GetMessageThread extends Thread {
                         else {
                             //System.out.println(rooms);
                             peer.neighborRooms.add(rooms);
+                            for (String room : rooms) {
+                                String roomName = jRead.getJSONRoomName(room);
+                                String roomCount = jRead.getJSONRoomCount(room);
+                                System.out.println("\t- "+roomName + " currently has " + roomCount + " users.");
+                            }
                         }
                     }
 
@@ -200,12 +205,11 @@ public class GetMessageThread extends Thread {
                         else {
                             // Don't print anything out, just append it to our queue.
                             peer.neighborQueue.add(peers);
-//                            System.out.println("DEBUG FROM THREAD");
-//                                for (ArrayList<String> x: peer.neighborQueue) {
-//                                    for (String y : x) {
-//                                        System.out.println(y);
-//                                    }
-//                                }
+//                            System.out.println("peers: " + peers);
+//                            for (String p : peers) {
+//                                System.out.println("peer " + p);
+//                            }
+
                         }
                     }
 
