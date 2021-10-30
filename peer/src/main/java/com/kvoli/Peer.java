@@ -339,6 +339,12 @@ public class Peer {
           System.out.println(ANSI_GREEN+"- Created room " + room + ". New owner: " + serverIdentity+ANSI_RESET);
         }
       }
+
+      // Send "migration success" message to peer that initiated the migration.
+      // This allows them to clear the rooms on their end as they have now been migrated.
+      
+
+
     }
     else {
       // We haven't received all rooms from the sender. We need to receive all rooms before we can begin construction.
@@ -368,7 +374,7 @@ public class Peer {
    *  each peer (using a separate connection to the peer's existing one -- if there is one that is) and find the rooms
    *  available in each peer using a #List command and also other peers to search (connect to) using #ListNeighbors.
    *  We connect to the first peer that is connected to us (e.g. peer B), then we ask peer B to hand over all the peers
-   *  that are connected to it. TODO: Don't forget we have to use BFS. So, search each peer 1 peer away, then 2 away etc.
+   *  that are connected to it.
    */
   protected synchronized void searchNetwork() throws InterruptedException {
     // Enabling this causes roomlist in GetMessageThread to save list information to an arraylist.
@@ -496,7 +502,7 @@ public class Peer {
   }
 
 
-  
+
 
 
   /**
