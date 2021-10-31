@@ -101,7 +101,7 @@ public class Peer {
       System.out.println("Listening to incoming peer connections on port "+ serverIdentityListeningPort);
       System.out.println("This peers IP address is: " + serverSocket.getInetAddress().getHostAddress());
 
-      // All peers can be 'servers'. We need to establish our own identity. TODO: Unsure if this is correct.
+      // All peers can be 'servers'. We need to establish our own identity
       serverIdentityInetAddress = serverSocket.getInetAddress();        // 0.0.0.0\0.0.0.0
       serverIP = serverSocket.getInetAddress().getHostAddress();    // 0.0.0.0
       serverIdentityListeningPort = serverSocket.getLocalPort();
@@ -197,8 +197,8 @@ public class Peer {
       }
 
     } catch (IOException e) {
-      System.out.println("Couldn't connect to peer.");
-      e.printStackTrace();
+      System.out.println("Couldn't connect to peer. Was the destination address correctly? Please try again.");
+      //e.printStackTrace();
     }
   }
 
@@ -236,7 +236,8 @@ public class Peer {
         peersToMigrate += r.getRoomSize();
       }
       System.out.println("Peers to migrate: "+peersToMigrate);
-      Thread.sleep(100); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
+      // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
+      Thread.sleep(100);
       for (ServerConnection c : currentConnections) {
         // Send the following JSON string
         // 'sender' : 'sender IP/port'
@@ -251,12 +252,12 @@ public class Peer {
       }
 
       // Delete rooms locally and #quit as now all migrations have been made.
-      currentRooms.clear();
-      clientToQuit = true;
-      ClientPackets.Quit quitMsg = new ClientPackets.Quit();
-      String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
-      writer.println(serverMessage);
-      writer.flush();
+//      currentRooms.clear();
+//      clientToQuit = true;
+//      ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+//      String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
+//      writer.println(serverMessage);
+//      writer.flush();
     }
 
     // Else, the peer has specified specific rooms to migrate over. The remaining unspecified rooms are lost I assume...?
@@ -288,17 +289,17 @@ public class Peer {
         }
       }
 
-      // Delete rooms locally and #quit as now all migrations have been made.
-      for (Room room : currentRooms) {
-        if (roomArrayList.contains(room.getRoomName())) {
-          currentRooms.remove(room);
-        }
-      }
-      clientToQuit = true;
-      ClientPackets.Quit quitMsg = new ClientPackets.Quit();
-      String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
-      writer.println(serverMessage);
-      writer.flush();
+//      // Delete rooms locally and #quit as now all migrations have been made.
+//      for (Room room : currentRooms) {
+//        if (roomArrayList.contains(room.getRoomName())) {
+//          currentRooms.remove(room);
+//        }
+//      }
+//      clientToQuit = true;
+//      ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+//      String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
+//      writer.println(serverMessage);
+//      writer.flush();
     }
   }
 
@@ -338,14 +339,18 @@ public class Peer {
         // If the room doesn't already exist then we can safely create it.
         if (!roomAlreadyExists) {
           currentRooms.add(new Room(room, serverIdentity));
-          System.out.println(ANSI_GREEN+"- Created room " + room + ". New owner: " + serverIdentity+ANSI_RESET);
+          System.out.println("- Created room " + room + ". New owner: " + serverIdentity);
         }
       }
 
       // Send "migration success" message to peer that initiated the migration.
       // This allows them to clear the rooms on their end as they have now been migrated.
-
-
+      writer = new PrintWriter(ToConnectedPeer, true);
+      JSONWriter jsonBuild = new JSONWriter();
+      String serverMessage = jsonBuild.buildJSONMigrationSuccess(true);
+      // Send message to the new host
+      writer.println(serverMessage);
+      writer.flush();
 
     }
     else {
@@ -355,18 +360,16 @@ public class Peer {
   }
 
 
-  /**
-   *
-   * @param sender            incoming from sender - the host of the room
-   * @param identity          incoming from sender - name of the peer
-   * @param roomName          incoming from sender - name of current room being sent
-   * @param totalIdentities   incoming from sender - total number of identities the host is sending to us
-   */
-  protected synchronized void handleMigratedIdentities(String sender, String identity, String roomName, int totalIdentities) {
+  protected synchronized void successfulMigrationProcedure() {
+    JSONWriter jsonBuild = new JSONWriter();
 
-
-
-    // Upon completion, unlock migrationInProgress.
+    // Delete rooms locally and #quit as now all migrations have been made.
+    currentRooms.clear();
+    clientToQuit = true;
+    ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+    String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
+    writer.println(serverMessage);
+    writer.flush();
   }
 
 
@@ -446,16 +449,18 @@ public class Peer {
         System.out.println("Exception in search method.");
       }
 
-      // Dequeue
+      // IMPORTANT. Need to sleep to allow the input thread to read whatever we flushed above.
       TimeUnit.MILLISECONDS.sleep(100);
       neighborQueue.remove(0);
-//      // IMPORTANT. Need to sleep to allow the input thread to read whatever we flushed above.
-//      TimeUnit.MILLISECONDS.sleep(100);
+
+      // Reset
+      neighborQueue = new ArrayList<ArrayList<String>>();
+      neighborRooms = new ArrayList<ArrayList<String>>();
+      serverIsSearchingNetwork = false;
 
 
 
-      // Can delete below....
-      // Was trying stuff with iterator. No luck...
+      // Can delete below.... was trying  iterator to avoid ConcurrentModificationException. No luck...
 //    Iterator<ArrayList<String>> neighborPeers = neighborQueue.iterator();
 //    while (neighborPeers.hasNext()) {
 //      Iterator<String> listOfPeers = neighborPeers.next().iterator();
@@ -498,9 +503,6 @@ public class Peer {
 //    }
 
     }
-    // Reset
-    neighborQueue = new ArrayList<ArrayList<String>>();
-    neighborRooms = new ArrayList<ArrayList<String>>();
   }
 
 
@@ -820,8 +822,8 @@ public class Peer {
       else if (c.roomID.equals(roomID) && isJson) {
         if (ignored == null || !ignored.equals(c)) {
           // Broadcast the JSON string to everyone in the room.
-          System.out.format("%nSending "+"JSON string(s). Check below:%n");
-          System.out.println("BroadcastRoom JSON: " + message);
+//          System.out.format("%nSending "+"JSON string(s). Check below:%n");
+//          System.out.println("BroadcastRoom JSON: " + message);
           c.sendMessage(message + "\n");
         }
       }
@@ -1033,6 +1035,7 @@ public class Peer {
       String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, roomID, "");
       System.out.println(serverMessage);
       broadcastRoom(serverMessage, roomID, null, conn.identity, true);
+      System.out.println(conn.identity + " disconnected. ");
 
       // Send roomChange JSON to the requesting client which will result in disconnect.
       //conn.sendMessage(serverMessage + "\n");
@@ -1209,6 +1212,14 @@ public class Peer {
               handleMigratedRooms(sender, roomName, totalRooms);
             }
 
+            else if (type.equals("migrationsuccess")) {
+              String migrationWasSuccessful =  jRead.getJSONMigrationSuccess();
+              if (migrationWasSuccessful.equals("true")) {
+                successfulMigrationProcedure();
+              }
+            }
+
+
             // Scan through the rooms and delete rooms that have no owner AND are empty
             closeRooms(this);
 
@@ -1226,7 +1237,7 @@ public class Peer {
       if (!gracefulDisconnection) {
         // If client didn't disconnect via #quit then force close the connection.
         if (!justBeenKicked) {
-          System.out.println("DEBUG: Someone abruptly disconnected from you.");
+          //System.out.println("DEBUG: Someone abruptly disconnected from you.");
         }
         else {
           System.out.println("Client kicked and has terminated connection on their side.");

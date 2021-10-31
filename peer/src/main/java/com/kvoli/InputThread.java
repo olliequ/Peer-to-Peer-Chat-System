@@ -55,23 +55,73 @@ public class InputThread extends Thread {
 
             // Command parsing
             if (text.contains("#connect")) {
-                String destIP = "localhost";   // TODO: destination IP is currently hardcoded to make testing easier.
                 String input = text.replaceAll("#connect", "");
                 input = input.stripLeading();
-                String[] connectArguments = input.split("\\s+");
-                List<String> connectArgumentsAL = Arrays.asList(connectArguments);
+                List<String> connectArgs = new ArrayList<String>(Arrays.asList(input.split(" ")));
 
-                int destinationPort = Integer.parseInt(input);
-                System.out.println("---> Attempting to connect to: " + destIP + " " + destinationPort);
-                //peer.connectToPeer(destIP, destinationPort, 0, false, "");
-                peer.connectToPeer(destIP, destinationPort, peer.makeOtherConnectionsPort, false, "");
 
-//                if (connectArgumentsAL.get(0).equals("")) {
-//                    System.out.println("You need to enter an IP address and Port Number. You can't connect to nothing!");
-//                }
-//                else if (connectArgumentsAL.size()>2) {
-//                    System.out.println("Too many arguments supplied.");
-//                }
+                // Ensure user has used the command correctly.
+                if (connectArgs.get(0).equals("") || (connectArgs.size()) > 2) {
+                    System.out.println("Please enter input with the format ServerIP:ServerPORT. ");
+                }
+
+                else if (connectArgs.size() == 1){
+                    // Retrieve destination IP
+                    String[] firstArgument = connectArgs.get(0).split(":");
+                    String destinationIP = firstArgument[0];
+
+                    // Only IP provided (no port). Connect to default port 4444
+                    if (firstArgument.length == 1) {
+                        System.out.println("--> Attempting to connect to: " + destinationIP + " with default port 4444.");
+                        peer.connectToPeer(destinationIP, 4444, peer.makeOtherConnectionsPort, false, "");
+                    }
+
+                    // IP and port provided but no outgoing port.
+                    else if (firstArgument.length == 2) {
+                        try {
+                            int destinationPort = Integer.parseInt(firstArgument[1]);
+                            peer.connectToPeer(destinationIP, destinationPort, peer.makeOtherConnectionsPort, false, "");
+                        } catch (Exception e) {
+                            System.out.println("Failed to connect. Ensure the server address is correct. ");
+                        }
+                    }
+                }
+
+                else if (connectArgs.size() == 2) {
+                    String[] firstArgument = connectArgs.get(0).split(":");
+                    String destinationIP = firstArgument[0];
+                    int outgoingPort = -1;
+                    boolean validOutgoingPort = false;
+
+                    try {
+                        outgoingPort = Integer.parseInt(connectArgs.get(1));
+                        validOutgoingPort = true;
+                    }
+                    catch (Exception e) {
+                        System.out.println("Invalid input for outgoing port. Integer not detected. Try again.");
+                    }
+
+                    // IP of peer supplied (but not a port). Outgoing port is supplied.
+                    if (firstArgument.length == 1 && validOutgoingPort) {
+                        System.out.println("---> Attempting to connect to: " + destinationIP + " on outgoing port: "+ outgoingPort);
+                        peer.connectToPeer(firstArgument[0], 4444, outgoingPort, false, "");
+                    }
+
+                    // IP and port of peer is supplied. Outgoing port is supplied.
+                    else if (validOutgoingPort) {
+                        try {
+                            int destinationPort = Integer.parseInt(firstArgument[1]);
+                            System.out.println("---> Attempting to connect to: " + destinationIP + ":" + destinationPort + " on outgoing port " + outgoingPort);
+                            peer.connectToPeer(destinationIP, destinationPort, outgoingPort, false, "");
+                        } catch (Exception e) {
+                            System.out.println("Failed to connect. Ensure the server address is correct. ");
+                        }
+                        //System.out.println("---> Attempting to connect to: " + destIP + ":" + destPort+" on outgoing port "+connectArgumentsAL.get(1));
+                        //peer.connectToPeer(firstArgument[0], Integer.parseInt(firstArgument[1]), Integer.parseInt(connectArgumentsAL.get(1)), false, "");
+                    }
+                }
+
+
 //                else if (connectArgumentsAL.size()==1) {
 //                    String[] firstArgument = connectArgumentsAL.get(0).split(":");
 //                    // Only IP provided and nothing else.
@@ -214,36 +264,37 @@ public class InputThread extends Thread {
                 input = input.stripLeading();
                 String[] portAndRooms = input.split("\\s+");
                 String[] roomArray = Arrays.copyOfRange(portAndRooms, 1, portAndRooms.length);
-//                for (String room : roomArray) {
-//                    System.out.println(room);
-//                }
-                // TODO: Hardcoded to make testing easier
-                String hostIP = "0.0.0.0";
-                System.out.println(portAndRooms[0]);
+
+                String hostIP = portAndRooms[0];
+                List<String> ipAndPort = new ArrayList<String>(Arrays.asList(hostIP.split(":")));
+
                 boolean correctInput = false;
                 int hostListenPort = -1;
                 try {
-                    hostListenPort = Integer.parseInt(portAndRooms[0]);
+                    hostListenPort = Integer.parseInt(ipAndPort.get(1));
                     correctInput = true;
                 }
                 catch (Exception e) {
-                    System.out.println("Incorrect command format. See #help.");
+                    System.out.println("Incorrect #migrate command format. See #help.");
                 }
 
                 // No room arguments supplied to the #migrate command. This is unaccepted.
                 if (roomArray.length == 0) {
-                    System.out.println(ANSI_RED+"You must specify rooms or write 'all'."+ANSI_RESET);
+                    System.out.println(ANSI_RED+"You must specify rooms or write 'all'.");
                 }
                 // One can't write 'all' and then also specify rooms to migrate.
                 else if (roomArray[0].equals("all") && roomArray.length != 1) {
-                    System.out.println(ANSI_RED+"You can't write 'all' and then also specify rooms."+ANSI_RESET);
+                    System.out.println(ANSI_RED+"You can't write 'all' and then also specify rooms.");
                 }
                 // Accepted input arguments, so let's call the migration method.
                 else if (correctInput){
                     try {
-                        peer.sendMigration(hostIP, hostListenPort, roomArray);
+                        System.out.println("DEBUG SENDING MIGRATION FOR ");
+                        System.out.println("HOSTIP: " + ipAndPort.get(0) + " HOSTPORT: " + hostListenPort);
+                        peer.sendMigration(ipAndPort.get(0), hostListenPort, roomArray);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        System.out.println("Migration could not be initiated. Ensure correct host address was provided.");
+                        //e.printStackTrace();
                     }
                 }
             }
