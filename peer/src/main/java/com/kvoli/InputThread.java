@@ -63,7 +63,8 @@ public class InputThread extends Thread {
 
                 int destinationPort = Integer.parseInt(input);
                 System.out.println("---> Attempting to connect to: " + destIP + " " + destinationPort);
-                peer.connectToPeer(destIP, destinationPort, 0, false, "");
+                //peer.connectToPeer(destIP, destinationPort, 0, false, "");
+                peer.connectToPeer(destIP, destinationPort, peer.makeOtherConnectionsPort, false, "");
 
 //                if (connectArgumentsAL.get(0).equals("")) {
 //                    System.out.println("You need to enter an IP address and Port Number. You can't connect to nothing!");

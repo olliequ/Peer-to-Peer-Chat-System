@@ -5,8 +5,8 @@ package com.kvoli;
 public class Main {
     public static void main(String[] args) {
         // Create a new peer instance
-        Peer peer = new Peer();
-        peer.handle();
+//        Peer peer = new Peer();
+//        peer.handle();
 
 
 
@@ -17,8 +17,6 @@ public class Main {
          * See slide 29
          */
 
-
-        // OLD CODE
         try {
             // Check args passed into server
             if (args.length == 0) {
@@ -28,14 +26,17 @@ public class Main {
                 peer.handle();
             }
             else if (args.length == 2) {
-                int port = Integer.parseInt(args[1]);
+                int port = Integer.parseInt(args[0]);
+                int localport = Integer.parseInt(args[1]);
                 System.out.println("Attempting to build peer on port " + port);
-                Peer peer = new Peer(port);
+                Peer peer = new Peer(port, localport);
                 peer.handle();
             }
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("ERROR: There was an issue parsing your input. Please try again.");
         }
+
+
     }
 }

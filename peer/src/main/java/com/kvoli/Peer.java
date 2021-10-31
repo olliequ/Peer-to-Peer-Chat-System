@@ -31,6 +31,7 @@ public class Peer {
   // All peers can be servers. A peer must establish their own server identity.
   protected InetAddress serverIdentityInetAddress;
   protected int serverIdentityListeningPort;
+  protected int makeOtherConnectionsPort;
   protected String serverIdentity;
   protected String serverIP;
   protected String connectedPeersIdentity;
@@ -64,12 +65,14 @@ public class Peer {
   private volatile List<String> migratedIdentities = new ArrayList<>();
 
 
-  // Currently in use by main
+
   public Peer() {}
 
-  // Not in use at the moment.
-  public Peer(int port) {
-    this.PORT = port;
+
+  //
+  public Peer(int serverIdentityListeningPort,  int makeOtherConnectionsPort) {
+    this.serverIdentityListeningPort = serverIdentityListeningPort;
+    this.makeOtherConnectionsPort = makeOtherConnectionsPort;
   }
 
 
@@ -94,15 +97,15 @@ public class Peer {
 
       // From my understanding there are two ports. An INCOMING and an OUTGOING port.
       // This is the peers INCOMING port.
-      System.out.printf("Listening to incoming peer connections on port "+ANSI_YELLOW+"%d.\n"+ANSI_RESET, serverSocket.getLocalPort());
+      System.out.printf("Listening to incoming peer connections on port "+"%d.\n"+ANSI_RESET, serverIdentityListeningPort);
       System.out.println("This peers IP address is: " + serverSocket.getInetAddress().getHostAddress());
 
       // All peers can be 'servers'. We need to establish our own identity.
       serverIdentityInetAddress = serverSocket.getInetAddress();        // 0.0.0.0\0.0.0.0
       serverIP = serverSocket.getInetAddress().getHostAddress();    // 0.0.0.0
-      serverIdentityListeningPort = serverSocket.getLocalPort();
-      serverIdentity = serverIP + ":" + serverIdentityListeningPort;
-      System.out.println("This peer's identity is: "+ANSI_YELLOW+ serverIdentityInetAddress +ANSI_RESET+"\n----------------");
+      //serverIdentityListeningPort = serverSocket.getLocalPort();
+      serverIdentity = serverIdentityInetAddress + ":" + serverIdentityListeningPort;
+      System.out.println("This peer's identity is: "+ANSI_YELLOW+ serverIdentity +ANSI_RESET+"\n----------------");
 
       // Testing purposes: create a test room
       clientCurrentRoom = "";
@@ -726,6 +729,7 @@ public class Peer {
     // Iterate through the currentConnections array list and build a JSON string out of it.
 
     List<String> neighbors = new ArrayList<String>();
+
 
     // Do not include the calling client in the list that is returned to the calling client.
     for (ServerConnection c: currentConnections) {
