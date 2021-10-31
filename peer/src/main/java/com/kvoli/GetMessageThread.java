@@ -37,7 +37,7 @@ public class GetMessageThread extends Thread {
 
             try {
                 String in = reader.readLine(); // Reads in JSON objects as they arrive
-                //System.out.println(in);
+                // System.out.println(in);
                 if (in != null) {
                     JSONReader jRead = new JSONReader();
                     jRead.readInput(in);
@@ -228,6 +228,14 @@ public class GetMessageThread extends Thread {
                             peer.connectToPeer("localhost", Integer.parseInt(jRead.getJSONHost()), 0, true, jRead.getJSONRoomId());
                         } catch (Exception e) {
                             System.out.println("Error during re-migration.");
+                        }
+                    }
+
+                    else if (protocol.equals("migrationsuccess")) {
+                        String migrationWasSuccessful =  jRead.getJSONMigrationSuccess();
+                        System.out.println(migrationWasSuccessful);
+                        if (migrationWasSuccessful.equals("true")) {
+                            peer.successfulMigrationProcedure();
                         }
                     }
                 }

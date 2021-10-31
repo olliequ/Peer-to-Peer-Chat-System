@@ -76,7 +76,6 @@ public class Peer {
     this.makeOtherConnectionsPort = makeOtherConnectionsPort;
   }
 
-
   /** Handle Method
    * Spawns an InputThread for the 'client' (similar to SendMessageThread).
    * Spawns an infinite while loop to accept incoming connections. Assign identities to these connections from their
@@ -237,7 +236,7 @@ public class Peer {
       }
       System.out.println("Peers to migrate: "+peersToMigrate);
       // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
-      Thread.sleep(100);
+      Thread.sleep(1000);
       for (ServerConnection c : currentConnections) {
         // Send the following JSON string
         // 'sender' : 'sender IP/port'
@@ -247,7 +246,7 @@ public class Peer {
         if (!c.roomID.equals("")) {
           String serverMessage = jsonBuild.buildJSONMigrationIdentity(hostIP, hostListenPort, sender, c.identity, c.roomID, peersToMigrate);
           c.sendMessage(serverMessage+ "\n");
-          c.close(); // May be able to delete this.
+          //c.close(); // May be able to delete this.
         }
       }
 
@@ -345,14 +344,11 @@ public class Peer {
 
       // Send "migration success" message to peer that initiated the migration.
       // This allows them to clear the rooms on their end as they have now been migrated.
-      writer = new PrintWriter(ToConnectedPeer, true);
       JSONWriter jsonBuild = new JSONWriter();
       String serverMessage = jsonBuild.buildJSONMigrationSuccess(true);
-      // Send message to the new host
-      writer.println(serverMessage);
-      writer.flush();
-
+      currentConnections.get(0).sendMessage(serverMessage); // TODO: not being received.
     }
+
     else {
       // We haven't received all rooms from the sender. We need to receive all rooms before we can begin construction.
       System.out.println("---> Construction of rooms not commencing as not all rooms have been received yet.");
@@ -1247,11 +1243,10 @@ public class Peer {
     }
 
     public void sendMessage (String msg) {
-      //System.out.format(ANSI_BLUE+"Sending JSON:"+ANSI_RESET+" %s", msg);
+      // System.out.format(ANSI_BLUE+"Sending JSON:"+ANSI_RESET+" %s", msg);
       writer.print(msg);
       writer.flush(); // Empty the buffer and send the data over the network.
     }
-
 
     public void close() {
       try {
