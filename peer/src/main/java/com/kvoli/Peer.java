@@ -273,7 +273,7 @@ public class Peer {
         }
       }
       System.out.println("Peers to migrate: "+peersToMigrate);
-      // TODO: NEED TO MOVE THIS TO SUCCESSFULMIGRATIONPROCEDURE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       Thread.sleep(200); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
       for (ServerConnection c : currentConnections) {
         if (roomArrayList.contains(c.roomID)) {
