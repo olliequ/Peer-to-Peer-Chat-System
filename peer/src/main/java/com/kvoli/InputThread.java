@@ -61,43 +61,43 @@ public class InputThread extends Thread {
                 String[] connectArguments = input.split("\\s+");
                 List<String> connectArgumentsAL = Arrays.asList(connectArguments);
 
-//                int destinationPort = Integer.parseInt(input);
-//                System.out.println("---> Attempting to connect to: " + destIP + " " + destinationPort);
-//                peer.connectToPeer(destIP, destinationPort, 0, false, "");
+                int destinationPort = Integer.parseInt(input);
+                System.out.println("---> Attempting to connect to: " + destIP + " " + destinationPort);
+                peer.connectToPeer(destIP, destinationPort, 0, false, "");
 
-                if (connectArgumentsAL.get(0).equals("")) {
-                    System.out.println("You need to enter an IP address and Port Number. You can't connect to nothing!");
-                }
-                else if (connectArgumentsAL.size()>2) {
-                    System.out.println("Too many arguments supplied.");
-                }
-                else if (connectArgumentsAL.size()==1) {
-                    String[] firstArgument = connectArgumentsAL.get(0).split(":");
-                    // Only IP provided and nothing else.
-                    if (firstArgument.length == 1) {
-                        System.out.println("---> Attempting to connect to: " + firstArgument[0]);
-                        peer.connectToPeer(firstArgument[0], 4444, 0, false, "");
-                    }
-                    // Only IP and its port provided. Outgoing port not provided.
-                    else {
-                        System.out.println("---> Attempting to connect to: " + firstArgument[0] + ":" + firstArgument[1]);
-                        peer.connectToPeer(firstArgument[0], Integer.parseInt(firstArgument[1]), 0, false, "");
-                    }
-                }
-                else {
-                    String[] firstArgument = connectArgumentsAL.get(0).split(":");
-                    // IP of peer supplied (but not a port) and an outgoing port.
-                    if (firstArgument.length == 1 && connectArgumentsAL.size() == 2) {
-                        System.out.println("---> Attempting to connect to: " + firstArgument[0]+" on outgoing port: "+connectArgumentsAL.get(1));
-                        peer.connectToPeer(firstArgument[0], 4444, Integer.parseInt(connectArgumentsAL.get(1)), false, "");
-                    }
-                    // IP of peer supplied, its port, and an outgoing port.
-                    else {
-                        int destPort = Integer.parseInt(input);
-                        System.out.println("---> Attempting to connect to: " + destIP + ":" + destPort+" on outgoing port "+connectArgumentsAL.get(1));
-                        peer.connectToPeer(firstArgument[0], Integer.parseInt(firstArgument[1]), Integer.parseInt(connectArgumentsAL.get(1)), false, "");
-                    }
-                }
+//                if (connectArgumentsAL.get(0).equals("")) {
+//                    System.out.println("You need to enter an IP address and Port Number. You can't connect to nothing!");
+//                }
+//                else if (connectArgumentsAL.size()>2) {
+//                    System.out.println("Too many arguments supplied.");
+//                }
+//                else if (connectArgumentsAL.size()==1) {
+//                    String[] firstArgument = connectArgumentsAL.get(0).split(":");
+//                    // Only IP provided and nothing else.
+//                    if (firstArgument.length == 1) {
+//                        System.out.println("---> Attempting to connect to: " + firstArgument[0]);
+//                        peer.connectToPeer(firstArgument[0], 4444, 0, false, "");
+//                    }
+//                    // Only IP and its port provided. Outgoing port not provided.
+//                    else {
+//                        System.out.println("---> Attempting to connect to: " + firstArgument[0] + ":" + firstArgument[1]);
+//                        peer.connectToPeer(firstArgument[0], Integer.parseInt(firstArgument[1]), 0, false, "");
+//                    }
+//                }
+//                else {
+//                    String[] firstArgument = connectArgumentsAL.get(0).split(":");
+//                    // IP of peer supplied (but not a port) and an outgoing port.
+//                    if (firstArgument.length == 1 && connectArgumentsAL.size() == 2) {
+//                        System.out.println("---> Attempting to connect to: " + firstArgument[0]+" on outgoing port: "+connectArgumentsAL.get(1));
+//                        peer.connectToPeer(firstArgument[0], 4444, Integer.parseInt(connectArgumentsAL.get(1)), false, "");
+//                    }
+//                    // IP of peer supplied, its port, and an outgoing port.
+//                    else {
+//                        int destPort = Integer.parseInt(input);
+//                        System.out.println("---> Attempting to connect to: " + destIP + ":" + destPort+" on outgoing port "+connectArgumentsAL.get(1));
+//                        peer.connectToPeer(firstArgument[0], Integer.parseInt(firstArgument[1]), Integer.parseInt(connectArgumentsAL.get(1)), false, "");
+//                    }
+//                }
             }
 
             else if (text.equals("#list")) {
@@ -116,7 +116,6 @@ public class InputThread extends Thread {
                     writer.flush();
                 }
             }
-
 
             // Peer can ping the server it is connected to and ask for a list of other people connected to the server.
             else if (text.contains("#listneighbors")) {
@@ -240,7 +239,7 @@ public class InputThread extends Thread {
 
             else if (text.contains("#help")) {
                 System.out.println(ANSI_CYAN+"The following commands are available to you:\n"+ANSI_RESET+
-                        "#connect IP[:port] [local port]: Connect to another peer. You can specify a port to connect to, and off of locally.\n- #join: Join a room" +
+                        "- #connect IP[:port] [local port]: Connect to another peer. You can specify a port to connect to, and off of locally.\n- #join: Join a room." +
                         "\n- #create room: Create a room locally.\n- #list: Retrieve both a local and a global list of rooms.\n- #who room: See who is in a specific room." +
                         "\n- #kick peer: Kick a peer connected to you.\n- #migrate IP[:port] all || #migrate IP[:port] [room#1]...[room#n]: Migrate rooms you're hosting (and any peers inside them) to another peer. " +
                         "\n\tSpecifying the 'all' flag will migrate all rooms you're hosting, otherwise you can choose specific rooms to migrate." +
