@@ -299,6 +299,62 @@ public class InputThread extends Thread {
                 }
             }
 
+
+            // ORIGINAL MIGRATE CODE WITH HARDCODE
+
+//            else if (text.contains("migrate")) {
+//                String input = text.replaceAll("#migrate", "");
+//                input = input.stripLeading();
+//                String[] portAndRooms = input.split("\\s+");
+//                String[] roomArray = Arrays.copyOfRange(portAndRooms, 1, portAndRooms.length);
+////                for (String room : roomArray) {
+////                    System.out.println(room);
+////                }
+//                // TODO: Hardcoded to make testing easier
+//                String hostIP = "0.0.0.0";
+//                System.out.println(portAndRooms[0]);
+//                boolean correctInput = false;
+//                int hostListenPort = -1;
+//                try {
+//                    hostListenPort = Integer.parseInt(portAndRooms[0]);
+//                    correctInput = true;
+//                }
+//                catch (Exception e) {
+//                    System.out.println("Incorrect command format. See #help.");
+//                }
+//
+//                // No room arguments supplied to the #migrate command. This is unaccepted.
+//                if (roomArray.length == 0) {
+//                    System.out.println(ANSI_RED+"You must specify rooms or write 'all'."+ANSI_RESET);
+//                }
+//                // One can't write 'all' and then also specify rooms to migrate.
+//                else if (roomArray[0].equals("all") && roomArray.length != 1) {
+//                    System.out.println(ANSI_RED+"You can't write 'all' and then also specify rooms."+ANSI_RESET);
+//                }
+//                // Accepted input arguments, so let's call the migration method.
+//                else if (correctInput){
+//                    try {
+//                        peer.sendMigration(hostIP, hostListenPort, roomArray);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             else if (text.contains("#help")) {
                 System.out.println(ANSI_CYAN+"The following commands are available to you:\n"+ANSI_RESET+
                         "#connect IP[:port] [local port]: Connect to another peer. You can specify a port to connect to, and off of locally.\n- #join: Join a room" +
