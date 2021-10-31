@@ -17,7 +17,6 @@ public class GetMessageThread extends Thread {
     private Peer peer;
     private BufferedReader reader;
     private PrintWriter writer;
-    //private Socket socket;                      // TODO: I RE-ENABLED THIS FOR socket.close();
     boolean getPeerMessages = true;
     private String serverAssignedIdentity = "NULL";             // Our IP and outgoing port number
     private String myCurrentRoom = "";
@@ -28,7 +27,6 @@ public class GetMessageThread extends Thread {
 
     public GetMessageThread(Peer peer) {
         this.peer = peer;
-        //this.socket = peer.socket;                  // TODO: I RE-ENABLED THIS FOR socket.close();
         reader = new BufferedReader(new InputStreamReader(peer.FromConnectedPeer));
     }
 
@@ -136,7 +134,9 @@ public class GetMessageThread extends Thread {
 
                         // The response of a quit command.
                         if (roomid.equals("") && (peer.clientToQuit)) {
-                            System.out.println("You have successfully disconnected from the host peer.");
+                            if (!peer.serverIsSearchingNetwork) {
+                                System.out.println("You have successfully disconnected from the host peer.");
+                            }
                             peer.clientToQuit = false;
                             peer.destSocket.close();
                             peer.FromConnectedPeer.close();
@@ -183,7 +183,7 @@ public class GetMessageThread extends Thread {
                     else if (protocol.equals("kick")) {
                         String message = jRead.getJSONKickMessage();
                         System.out.println("---> "+ANSI_RED+message+ANSI_RESET);
-                        System.out.println("Disconnected from peer. Try connect to another if you want.");
+                        System.out.println("Disconnected from peer. Try and connect to another peer if you want.");
                         // System.out.println(peer.destSocket.isConnected());
                         //System.out.println(peer.destSocket.isClosed());
                         this.peer.destSocket.close();

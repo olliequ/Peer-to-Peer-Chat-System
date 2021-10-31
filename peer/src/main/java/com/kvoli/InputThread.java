@@ -259,14 +259,6 @@ public class InputThread extends Thread {
 
             // Input is not a command therefore it must be a message.
             else {
-                // DEBUGGING SEARCHNETWORK
-//                System.out.println("Queue for this peer. ");
-//                for (ArrayList<String> x: peer.neighborQueue) {
-//                    for (String y : x) {
-//                        System.out.println(y);
-//                    }
-//                }
-
                 // Condition for if we're connected to the 'server' peer
                 if (!text.equals("") && peer.connectionEstablishedWithServer) {
                     // Wrap this input into JSON.

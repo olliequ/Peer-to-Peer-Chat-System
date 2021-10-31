@@ -15,8 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Peer {
   private PrintWriter writer;
-
-  //protected Socket socket;          // TODO: I RE-ENABLED THIS FOR socket.close();
   // Destination (server) socket (i.e. the peer that we have connected to).
   protected Socket destSocket;
   // Input and output streams from the peer (server) that we are connected to.
@@ -99,7 +97,7 @@ public class Peer {
       System.out.printf("Listening to incoming peer connections on port "+ANSI_YELLOW+"%d.\n"+ANSI_RESET, serverSocket.getLocalPort());
       System.out.println("This peers IP address is: " + serverSocket.getInetAddress().getHostAddress());
 
-      // All peers can be 'servers'. We need to establish our own identity. TODO: Unsure if this is correct.
+      // All peers can be 'servers'. We need to establish our own identity.
       serverIdentityInetAddress = serverSocket.getInetAddress();        // 0.0.0.0\0.0.0.0
       serverIP = serverSocket.getInetAddress().getHostAddress();    // 0.0.0.0
       serverIdentityListeningPort = serverSocket.getLocalPort();
@@ -108,7 +106,6 @@ public class Peer {
 
       // Testing purposes: create a test room
       clientCurrentRoom = "";
-      //currentRooms.add(new Room("Test Room", serverIdentityInetAddress.toString()));
 
       // The peers port will accept incoming connections within an infinite loop.
       while (acceptConnections) {
@@ -133,7 +130,7 @@ public class Peer {
           System.out.println(ANSI_RED+"---> Oh wait -- this is a banned peer! It is not allowed to join us. Telling it to go away now."+ANSI_RESET);
           PrintWriter writerr = new PrintWriter(socket.getOutputStream());
           JSONWriter jsonBuilda = new JSONWriter();
-          String message = "What did I tell you? You're banned. Stop trying to connect here.";
+          String message = "Connection refused as you are banned.";
           ClientPackets.Kick kickthing = new ClientPackets.Kick(message);
           String bannedMessage = jsonBuilda.buildKickMsg(kickthing);
           writerr.println(bannedMessage);
@@ -164,7 +161,7 @@ public class Peer {
   /**
    * Used by the connect command from InputThread. Allows a user to connect to another peer.
    * NEW IN A2
-   * @param destIP              Currently using 'localhost'. TODO: Unsure if this is correct.
+   * @param destIP
    * @param destPort            Port number of the peer we want to connect to.
    */
   protected synchronized void connectToPeer(String destIP, int destPort, int outGooingPort, boolean peerRemigratingOrNot, String remigrationRoom) {
@@ -246,18 +243,17 @@ public class Peer {
           c.sendMessage(serverMessage+ "\n");
           c.close(); // May be able to delete this.
         }
-      }
 
-      // Delete rooms locally and #quit as now all migrations have been made.
-      currentRooms.clear();
-      clientToQuit = true;
-      ClientPackets.Quit quitMsg = new ClientPackets.Quit();
-      String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
-      writer.println(serverMessage);
-      writer.flush();
+        // #quit as now all migrations have been made from our end.
+//        clientToQuit = true;
+//        ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+//        String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
+//        writer.println(serverMessage);
+//        writer.flush();
+      }
     }
 
-    // Else, the peer has specified specific rooms to migrate over. The remaining unspecified rooms are lost I assume...?
+    // Else, the peer has specified specific rooms to migrate over. T
     else {
       for (String a : roomArray) {
         for (Room r: currentRooms) {
@@ -277,6 +273,7 @@ public class Peer {
         }
       }
       System.out.println("Peers to migrate: "+peersToMigrate);
+      // TODO: NEED TO MOVE THIS TO SUCCESSFULMIGRATIONPROCEDURE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       Thread.sleep(200); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
       for (ServerConnection c : currentConnections) {
         if (roomArrayList.contains(c.roomID)) {
@@ -287,16 +284,19 @@ public class Peer {
       }
 
       // Delete rooms locally and #quit as now all migrations have been made.
-      for (Room room : currentRooms) {
-        if (roomArrayList.contains(room.getRoomName())) {
-          currentRooms.remove(room);
-        }
-      }
-      clientToQuit = true;
-      ClientPackets.Quit quitMsg = new ClientPackets.Quit();
-      String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
-      writer.println(serverMessage);
-      writer.flush();
+      // MOVED TO successfulMigrationProcedure()
+//      for (Room room : currentRooms) {
+//        if (roomArrayList.contains(room.getRoomName())) {
+//          currentRooms.remove(room);
+//        }
+//      }
+
+      // #quit as now all migrations have been made from our end.
+//      clientToQuit = true;
+//      ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+//      String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
+//      writer.println(serverMessage);
+//      writer.flush();
     }
   }
 
@@ -342,7 +342,13 @@ public class Peer {
 
       // Send "migration success" message to peer that initiated the migration.
       // This allows them to clear the rooms on their end as they have now been migrated.
-      
+      writer = new PrintWriter(ToConnectedPeer, true);
+      JSONWriter jsonBuild = new JSONWriter();
+      String serverMessage = jsonBuild.buildJSONMigrationSuccess(true);
+      // Send message to the new host
+      writer.println(serverMessage);
+      writer.flush();
+
 
 
     }
@@ -350,6 +356,21 @@ public class Peer {
       // We haven't received all rooms from the sender. We need to receive all rooms before we can begin construction.
       System.out.println("---> Construction of rooms not commencing as not all rooms have been received yet.");
     }
+  }
+
+
+  protected synchronized void successfulMigrationProcedure() {
+    JSONWriter jsonBuild = new JSONWriter();
+
+    // Delete rooms locally and #quit as now all migrations have been made.
+    currentRooms.clear();
+    clientToQuit = true;
+    ClientPackets.Quit quitMsg = new ClientPackets.Quit();
+    String serverMessage = jsonBuild.buildQuitMsg(quitMsg);
+    writer.println(serverMessage);
+    writer.flush();
+
+
   }
 
 
@@ -499,6 +520,7 @@ public class Peer {
     // Reset
     neighborQueue = new ArrayList<ArrayList<String>>();
     neighborRooms = new ArrayList<ArrayList<String>>();
+    serverIsSearchingNetwork = false;
   }
 
 
@@ -1207,6 +1229,13 @@ public class Peer {
               handleMigratedRooms(sender, roomName, totalRooms);
             }
 
+            else if (type.equals("migrationsuccess")) {
+              String migrationWasSuccessful =  jRead.getJSONMigrationSuccess();
+              if (migrationWasSuccessful.equals("true")) {
+                successfulMigrationProcedure();
+              }
+            }
+
             // Scan through the rooms and delete rooms that have no owner AND are empty
             closeRooms(this);
 
@@ -1224,7 +1253,7 @@ public class Peer {
       if (!gracefulDisconnection) {
         // If client didn't disconnect via #quit then force close the connection.
         if (!justBeenKicked) {
-          System.out.println("DEBUG: Someone abruptly disconnected from you.");
+          //System.out.println("DEBUG: Someone abruptly disconnected from you.");
         }
         else {
           System.out.println("Client kicked and has terminated connection on their side.");

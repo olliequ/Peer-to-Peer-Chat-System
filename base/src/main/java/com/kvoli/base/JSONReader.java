@@ -55,6 +55,10 @@ public class JSONReader {
         return jNode.get("roomid").asText();
     }
 
+    public String getJSONMigrationSuccess() {
+        return jNode.get("successfulMigration").asText();
+    }
+
     public String getJSONOwner() {
         return jNode.get("owner").asText();
     }

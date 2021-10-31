@@ -273,14 +273,29 @@ public class JSONWriter {
     }
 
 
+    public String buildJSONMigrationSuccess(boolean successfulMigration) {
+        String serverMessage = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            ServerPackets.MigrationSuccess migrationSuccess = new ServerPackets.MigrationSuccess(successfulMigration);
+            serverMessage = objectMapper.writeValueAsString(migrationSuccess);
+            return serverMessage;
+        } catch (Exception e) {
+            System.out.println("Error when writing migrationSuccess JSON message.");
+        }
+        return serverMessage;
+    }
+
+
     public String buildJSONMigrationRoom (String sender, String roomName, int totalRooms) {
         String serverMessage = null;
         ObjectMapper objectMapper = new ObjectMapper();
 
         try{
             // Build a new JSON string out of these fields
-            ServerPackets.MigrationRoom migrateRooom = new ServerPackets.MigrationRoom(sender, roomName, totalRooms);
-            serverMessage = objectMapper.writeValueAsString(migrateRooom);
+            ServerPackets.MigrationRoom migrateRoom = new ServerPackets.MigrationRoom(sender, roomName, totalRooms);
+            serverMessage = objectMapper.writeValueAsString(migrateRoom);
             //System.out.println("Testing: " + serverMessage);
             return serverMessage;
 
