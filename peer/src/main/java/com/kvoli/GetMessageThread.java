@@ -17,7 +17,6 @@ public class GetMessageThread extends Thread {
     private Peer peer;
     private BufferedReader reader;
     private PrintWriter writer;
-    // private Socket socket;
     boolean getPeerMessages = true;
     private String serverAssignedIdentity = "NULL";             // Our IP and outgoing port number
     private String myCurrentRoom = "";
@@ -28,7 +27,6 @@ public class GetMessageThread extends Thread {
 
     public GetMessageThread(Peer peer) {
         this.peer = peer;
-        // this.socket = peer.socket;
         reader = new BufferedReader(new InputStreamReader(peer.FromConnectedPeer));
     }
 
@@ -118,6 +116,11 @@ public class GetMessageThread extends Thread {
                         else {
                             //System.out.println(rooms);
                             peer.neighborRooms.add(rooms);
+                            for (String room : rooms) {
+                                String roomName = jRead.getJSONRoomName(room);
+                                String roomCount = jRead.getJSONRoomCount(room);
+                                System.out.println("\t- "+roomName + " currently has " + roomCount + " users.");
+                            }
                         }
                     }
 
@@ -131,7 +134,9 @@ public class GetMessageThread extends Thread {
 
                         // The response of a quit command.
                         if (roomid.equals("") && (peer.clientToQuit)) {
-                            System.out.println("You have successfully disconnected from the host peer.");
+                            if (!peer.serverIsSearchingNetwork) {
+                                System.out.println("You have successfully disconnected from the host peer.");
+                            }
                             peer.clientToQuit = false;
                             peer.destSocket.close();
                             peer.FromConnectedPeer.close();
@@ -178,7 +183,7 @@ public class GetMessageThread extends Thread {
                     else if (protocol.equals("kick")) {
                         String message = jRead.getJSONKickMessage();
                         System.out.println("---> "+ANSI_RED+message+ANSI_RESET);
-                        System.out.println("Disconnected from peer. Try connect to another if you want.");
+                        System.out.println("Disconnected from peer. Try and connect to another peer if you want.");
                         // System.out.println(peer.destSocket.isConnected());
                         //System.out.println(peer.destSocket.isClosed());
                         this.peer.destSocket.close();
@@ -196,15 +201,15 @@ public class GetMessageThread extends Thread {
                         if (!peer.serverIsSearchingNetwork) {
                             System.out.println("List of neighbors: " + peers);
                         }
+                        // If peer searching network
                         else {
                             // Don't print anything out, just append it to our queue.
                             peer.neighborQueue.add(peers);
-//                            System.out.println("DEBUG FROM THREAD");
-//                                for (ArrayList<String> x: peer.neighborQueue) {
-//                                    for (String y : x) {
-//                                        System.out.println(y);
-//                                    }
-//                                }
+//                            System.out.println("peers: " + peers);
+//                            for (String p : peers) {
+//                                System.out.println("peer " + p);
+//                            }
+
                         }
                     }
 
@@ -228,15 +233,13 @@ public class GetMessageThread extends Thread {
                 }
 
             } catch (IOException e) {
-                System.out.println("GetMessageThread exception when retrieving messages from peer");
-                e.printStackTrace();
-//                try {
-//                    // socket.close();
-//                    System.exit(0);
-//                } catch (IOException ex) {
-//                    System.out.println("Exception occurred when closing socket.");
-//                    ex.printStackTrace();
-//                }
+                System.out.println();
+                System.out.println("Error occurred when retrieving message from the server.");
+                System.out.println("You have been disconnected from the server.");
+                peer.connectionEstablishedWithServer = false;
+                System.out.println("You can try reconnecting to another peer.");
+                //e.printStackTrace();
+                //System.exit(0);
                 break;
             }
         }

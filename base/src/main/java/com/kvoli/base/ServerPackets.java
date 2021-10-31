@@ -150,4 +150,15 @@ public class ServerPackets {
             this.totalIdentities = totalIdentities;
         }
     }
+
+
+    @JsonTypeName("migrationsuccess")
+    public static class MigrationSuccess {
+        public String type = "migrationsuccess";
+        public boolean successfulMigration;
+
+        public MigrationSuccess(boolean successfulMigration) {
+            this.successfulMigration = successfulMigration;
+        }
+    }
 }
