@@ -259,6 +259,8 @@ public class InputThread extends Thread {
             }
 
             // Local command that begins the Room Migration process.
+            // I changed some stuff to get it working with CLI.
+            // Scroll to line 305 for a duplicate backup of migrate without my changes.
             else if (text.contains("migrate")) {
                 String input = text.replaceAll("#migrate", "");
                 input = input.stripLeading();
