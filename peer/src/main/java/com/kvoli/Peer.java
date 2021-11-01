@@ -192,8 +192,8 @@ public class Peer {
         writer.flush();
       }
     } catch (IOException e) {
+      e.printStackTrace();
       System.out.println("Couldn't connect to peer. Was the destination address correctly? Please try again.");
-      //e.printStackTrace();
     }
   }
 
@@ -1167,7 +1167,7 @@ public class Peer {
             }
 
             else if (type.equals("who")) {
-              System.out.format("Who JSON: %s%n", in);
+              //System.out.format("Who JSON: %s%n", in);
               String whoRoom = jRead.getJSONRoomId();
               boolean roomExists = false;
               // Check that the room they're inquiring about exists.
@@ -1180,7 +1180,7 @@ public class Peer {
               if (roomExists) {
                 String contents = getRoomContents(this, whoRoom);
                 // System.out.format("%nSending "+"JSON string(s). Check below:%n");
-                System.out.println("BroadcastRoom JSON: " + contents);
+                //System.out.println("BroadcastRoom JSON: " + contents);
                 sendMessage(contents + "\n");
               }
               // If it doesn't, send an error message.
@@ -1188,7 +1188,7 @@ public class Peer {
                 String whoErrorMessage = "The room you're inquiring about ("+whoRoom+") doesn't exist. Try again.";
                 String serverMessageJSON = jsonBuild.buildJSON(whoErrorMessage, serverIdentity); // Replaced "Peer"
                 // System.out.format("%nSending "+"JSON string(s). Check below:%n");
-                System.out.println("WrongWho JSON: " + serverMessageJSON);
+                //System.out.println("WrongWho JSON: " + serverMessageJSON);
                 this.sendMessage(serverMessageJSON + "\n");
               }
             }
