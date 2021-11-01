@@ -300,7 +300,6 @@ public class InputThread extends Thread {
 
 
             // ORIGINAL MIGRATE CODE WITH HARDCODE
-
 //            else if (text.contains("migrate")) {
 //                String input = text.replaceAll("#migrate", "");
 //                input = input.stripLeading();
