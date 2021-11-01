@@ -67,6 +67,7 @@ public class Main {
                         int listeningPort = Integer.parseInt(args[1]);
                         int outboundPort = Integer.parseInt(args[3]);
                         System.out.println("Building peer with listening port: " + listeningPort + " and outgoing port " + outboundPort);
+                        System.out.println();
                         Peer peer = new Peer(listeningPort, outboundPort);
                         peer.handle();
                     } catch (Exception e) {
@@ -82,6 +83,7 @@ public class Main {
                         int listeningPort = Integer.parseInt(args[3]);
                         int outboundPort = Integer.parseInt(args[1]);
                         System.out.println("Building peer with listening port: " + listeningPort + " and outgoing port " + outboundPort);
+                        System.out.println();
                         Peer peer = new Peer(listeningPort, outboundPort);
                         peer.handle();
                     } catch (Exception e) {

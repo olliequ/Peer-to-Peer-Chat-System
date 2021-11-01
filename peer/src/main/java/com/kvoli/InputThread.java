@@ -297,8 +297,8 @@ public class InputThread extends Thread {
                 // Accepted input arguments, so let's call the migration method.
                 else if (correctInput){
                     try {
-                        System.out.println("DEBUG SENDING MIGRATION FOR ");
-                        System.out.println("HOSTIP: " + ipAndPort.get(0) + " HOSTPORT: " + hostListenPort);
+//                        System.out.println("DEBUG SENDING MIGRATION FOR ");
+//                        System.out.println("HOSTIP: " + ipAndPort.get(0) + " HOSTPORT: " + hostListenPort);
                         peer.sendMigration(ipAndPort.get(0), hostListenPort, roomArray);
                     } catch (InterruptedException e) {
                         System.out.println("Migration could not be initiated. Ensure correct host address was provided.");

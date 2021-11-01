@@ -104,7 +104,7 @@ public class Peer {
       serverIP = serverSocket.getInetAddress().getHostAddress();                    // 0.0.0.0
       serverIdentityListeningPort = serverSocket.getLocalPort();
       serverIdentity = serverIdentityInetAddress + ":" + serverIdentityListeningPort;
-      System.out.println("This peer's identity is: "+ serverIdentity +"\n----------------");
+      System.out.println("This peer's identity is: "+ serverIdentity +"\n---------------- \n");
 
       // Testing purposes: create a test room
       clientCurrentRoom = "";
@@ -235,7 +235,7 @@ public class Peer {
         }
         System.out.println("Peers to migrate: "+peersToMigrate);
         // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
-        Thread.sleep(200);
+        Thread.sleep(500);
         for (ServerConnection c : currentConnections) {
           // Send the following JSON string
           // 'sender' : 'sender IP/port'
@@ -278,7 +278,7 @@ public class Peer {
           }
         }
         System.out.println("Peers to migrate: "+peersToMigrate);
-        Thread.sleep(200); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
+        Thread.sleep(500); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
         for (ServerConnection c : currentConnections) {
           if (roomArrayList.contains(c.roomID)) {
             String serverMessage = jsonBuild.buildJSONMigrationIdentity(hostIP, hostListenPort, sender, c.identity, c.roomID, peersToMigrate);
