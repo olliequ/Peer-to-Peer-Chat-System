@@ -234,7 +234,7 @@ public class GetMessageThread extends Thread {
 
                     else if (protocol.equals("migrationsuccess")) {
                         String migrationWasSuccessful =  jRead.getJSONMigrationSuccess();
-                        System.out.println(migrationWasSuccessful);
+                        //System.out.println(migrationWasSuccessful);
                         if (migrationWasSuccessful.equals("true")) {
                             peer.successfulMigrationProcedure();
                         }

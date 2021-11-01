@@ -104,7 +104,7 @@ public class Peer {
       serverIP = serverSocket.getInetAddress().getHostAddress();                    // 0.0.0.0
       serverIdentityListeningPort = serverSocket.getLocalPort();
       serverIdentity = serverIdentityInetAddress + ":" + serverIdentityListeningPort;
-      System.out.println("This peer's identity is: "+ serverIdentity +"\n----------------");
+      System.out.println("This peer's identity is: "+ serverIdentity +"\n---------------- \n");
 
       // Testing purposes: create a test room
       clientCurrentRoom = "";
@@ -127,9 +127,9 @@ public class Peer {
         System.out.println("\t- The identity of the peer that just connected to you is: " + clientIdentity);
         System.out.format("\t- Connected off of you on: %s:%d%n", socket.getLocalAddress(), socket.getLocalPort());
 
-        for (String a : bannedPeers) {
-          System.out.format("Banned peer: %s%n", a);
-        }
+//        for (String a : bannedPeers) {
+//          System.out.format("Banned peer: %s%n", a);
+//        }
 
         if (bannedPeers.contains(clientIdentity)) {
           System.out.println("---> Oh wait -- this is a banned peer! It is not allowed to join us. Telling it to go away now.");
@@ -235,7 +235,7 @@ public class Peer {
         }
         System.out.println("Peers to migrate: "+peersToMigrate);
         // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
-        Thread.sleep(200);
+        Thread.sleep(500);
         for (ServerConnection c : currentConnections) {
           // Send the following JSON string
           // 'sender' : 'sender IP/port'
@@ -278,7 +278,7 @@ public class Peer {
           }
         }
         System.out.println("Peers to migrate: "+peersToMigrate);
-        Thread.sleep(200); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
+        Thread.sleep(500); // Sleep necessary so that rooms are received and built on the receiving peer BEFORE the other peers migrate to it and request to join to the rooms.
         for (ServerConnection c : currentConnections) {
           if (roomArrayList.contains(c.roomID)) {
             String serverMessage = jsonBuild.buildJSONMigrationIdentity(hostIP, hostListenPort, sender, c.identity, c.roomID, peersToMigrate);
@@ -542,7 +542,7 @@ public class Peer {
    */
   protected synchronized void getLocalRoomList() {
     if (currentRooms.isEmpty()) {
-      System.out.println("There are no rooms currently locally existing. #create one to get started.");
+      System.out.println("There are no rooms currently locally existing. Use #createroom to get started.");
     }
     else {
       System.out.println("Below are the rooms you are currently hosting locally:");
@@ -1036,7 +1036,7 @@ public class Peer {
       // Send RoomChange message to all clients in the room
       JSONWriter jsonBuild = new JSONWriter();
       String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, roomID, "");
-      System.out.println(serverMessage);
+      //System.out.println(serverMessage);
       broadcastRoom(serverMessage, roomID, null, conn.identity, true);
       System.out.println(conn.identity + " disconnected. ");
 
