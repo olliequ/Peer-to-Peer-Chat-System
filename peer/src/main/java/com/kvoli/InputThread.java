@@ -26,7 +26,6 @@ public class InputThread extends Thread {
 
     public InputThread(Peer peer) {
         this.peer = peer;
-        // this.socket = peer.socket;
     }
 
     /**
@@ -35,7 +34,7 @@ public class InputThread extends Thread {
 
     @Override
     public void run() {
-        System.out.println("----------------\n"+ANSI_BLUE+"Welcome! Please issue a command."+ANSI_RESET);
+        System.out.println("----------------\n"+ "Welcome! Please issue a command.");
         while (getUserInput) {
             JSONWriter jWrite = new JSONWriter();
             String text = "";
@@ -54,6 +53,7 @@ public class InputThread extends Thread {
             }
 
             // Command parsing
+            // CONNECT COMMAND
             if (text.contains("#connect")) {
                 String input = text.replaceAll("#connect", "");
                 input = input.stripLeading();
@@ -149,6 +149,7 @@ public class InputThread extends Thread {
 //                }
             }
 
+            // LIST COMMAND
             else if (text.equals("#list")) {
                 ClientPackets.List listRoom = new ClientPackets.List();
                 this.peer.clientListCmdStatus = true;
@@ -166,6 +167,7 @@ public class InputThread extends Thread {
                 }
             }
 
+            // LISTNEIGHBORS COMMAND
             // Peer can ping the server it is connected to and ask for a list of other people connected to the server.
             else if (text.contains("#listneighbors")) {
                  if (peer.connectionEstablishedWithServer) {
@@ -180,12 +182,14 @@ public class InputThread extends Thread {
                  }
             }
 
+            // CREATEROOM COMMAND
             else if (text.contains("#createroom")) {
                 String input = text.replaceAll("#createroom", "");
                 input = input.stripLeading();
                 peer.createLocalRoom(input, peer.serverIdentityInetAddress.toString());
             }
 
+            // DELETE COMMAND
             else if (text.contains("#delete")) {
                 String input = text.replaceAll("#delete", "");
                 input = input.stripLeading();
@@ -197,6 +201,7 @@ public class InputThread extends Thread {
                 }
             }
 
+            // JOIN COMMAND
             else if (text.contains("#join")) {
                 String input = text.replaceAll("#join", "");
                 input = input.stripLeading();
@@ -215,6 +220,7 @@ public class InputThread extends Thread {
                 }
             }
 
+            // WHO COMMAND
             else if (text.contains("#who") && (peer.connectionEstablishedWithServer)) {
                 String input = text.replaceAll("#who", "");
                 input = input.stripLeading();
@@ -225,6 +231,7 @@ public class InputThread extends Thread {
                 writer.flush();
             }
 
+            // KICK COMMAND
             else if (text.contains("#kick")) {
                 String peerToKick = text.replaceAll("#kick", "");
                 peerToKick = peerToKick.stripLeading();
@@ -235,6 +242,8 @@ public class InputThread extends Thread {
                 peer.displayConnectedPeers();
             }
 
+
+            // QUIT COMMAND
             else if (text.contains("quit") && (peer.connectionEstablishedWithServer)) {
                 String input = text.replaceAll("#quit", "");
                 input = input.stripLeading();
@@ -246,6 +255,7 @@ public class InputThread extends Thread {
                 writer.flush();
             }
 
+            // SEARCH COMMAND
             // Local command that allows the peer to find all the peers available to it
             else if (text.contains("search")) {
                 try {
@@ -257,7 +267,6 @@ public class InputThread extends Thread {
 
             // Local command that begins the Room Migration process.
             // I changed some stuff to get it working with CLI.
-            // Scroll to line 305 for a duplicate backup of migrate without my changes.
             else if (text.contains("migrate")) {
                 String input = text.replaceAll("#migrate", "");
                 input = input.stripLeading();
@@ -279,11 +288,11 @@ public class InputThread extends Thread {
 
                 // No room arguments supplied to the #migrate command. This is unaccepted.
                 if (roomArray.length == 0) {
-                    System.out.println(ANSI_RED+"You must specify rooms or write 'all'.");
+                    System.out.println("You must specify rooms or write 'all'.");
                 }
                 // One can't write 'all' and then also specify rooms to migrate.
                 else if (roomArray[0].equals("all") && roomArray.length != 1) {
-                    System.out.println(ANSI_RED+"You can't write 'all' and then also specify rooms.");
+                    System.out.println("You can't write 'all' and then also specify rooms.");
                 }
                 // Accepted input arguments, so let's call the migration method.
                 else if (correctInput){
@@ -339,8 +348,10 @@ public class InputThread extends Thread {
 //                }
 //            }
 
+
+            // HELP COMMAND
             else if (text.contains("#help")) {
-                System.out.println(ANSI_CYAN+"The following commands are available to you:\n"+ANSI_RESET+
+                System.out.println("The following commands are available to you:\n"+
                         "- #connect IP[:port] [local port]: Connect to another peer. You can specify a port to connect to, and off of locally.\n- #join: Join a room." +
                         "\n- #create room: Create a room locally.\n- #list: Retrieve both a local and a global list of rooms.\n- #who room: See who is in a specific room." +
                         "\n- #kick peer: Kick a peer connected to you.\n- #migrate IP[:port] all || #migrate IP[:port] [room#1]...[room#n]: Migrate rooms you're hosting (and any peers inside them) to another peer. " +
@@ -349,7 +360,8 @@ public class InputThread extends Thread {
                         "\n- #SearchNetwork: Retrieve all rooms and who's in them from a chain of peers in a network you're a part of.\n- #help: Lists all available commands you can use.");
             }
 
-            // Input is not a command therefore it must be a message.
+
+            // Otherwise, input is not a command therefore it must be a message.
             else {
                 // Condition for if we're connected to the 'server' peer
                 if (!text.equals("") && peer.connectionEstablishedWithServer) {

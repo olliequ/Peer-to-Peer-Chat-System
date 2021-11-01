@@ -84,7 +84,7 @@ public class GetMessageThread extends Thread {
                         }
                         // Case for when it's someone else's message.
                         else if (!peer.serverIsSearchingNetwork) {
-                            System.out.println(ANSI_YELLOW+incomingIdentity+" says: "+ANSI_RESET+content);
+                            System.out.println(incomingIdentity+" says: "+ content);
                         }
                     }
 
@@ -155,7 +155,8 @@ public class GetMessageThread extends Thread {
                         }
 
                         else if (!former.equals("") && (roomid).equals("")) {
-                            System.out.println("You have been moved to the null room as "+former+" has been deleted.");
+                            // Commented this out as it is causing problems with #kick
+                            //System.out.println("You have been moved to the null room as "+former+" has been deleted.");
                         }
 
                         else {
@@ -182,7 +183,7 @@ public class GetMessageThread extends Thread {
                     // For when a peer gets kicked.
                     else if (protocol.equals("kick")) {
                         String message = jRead.getJSONKickMessage();
-                        System.out.println("---> "+ANSI_RED+message+ANSI_RESET);
+                        System.out.println("---> "+ message);
                         System.out.println("Disconnected from peer. Try and connect to another peer if you want.");
                         // System.out.println(peer.destSocket.isConnected());
                         //System.out.println(peer.destSocket.isClosed());

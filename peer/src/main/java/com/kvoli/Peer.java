@@ -49,6 +49,12 @@ public class Peer {
   private volatile List<String> bannedPeers = new ArrayList<>();
   private boolean acceptConnections = false;
 
+  // Used for Room Migration feature
+  boolean migrationInProgress = false;
+  private volatile List<String> migratedRooms = new ArrayList<>();
+  private volatile List<String> migratedIdentities = new ArrayList<>();
+
+  // I have removed all references to ANSI colours as it is breaking output on Windows.
   public static final String ANSI_RED = "\u001B[31m";
   public static final String ANSI_BLUE = "\u001B[34m";
   public static final String ANSI_CYAN = "\u001B[36m";
@@ -56,22 +62,18 @@ public class Peer {
   public static final String ANSI_YELLOW = "\u001B[33m";
   public static final String ANSI_RESET = "\u001B[0m";
 
-  //public final int outgoingPort = 54000;
-  // Old code from A1
-  //public static int PORT = 4444;
 
-  // Used for Room Migration feature
-  boolean migrationInProgress = false;
-  private volatile List<String> migratedRooms = new ArrayList<>();
-  private volatile List<String> migratedIdentities = new ArrayList<>();
-
-
+  // Default Constructor (not used)
   public Peer() {}
 
+  // Main Constructor
   public Peer(int serverIdentityListeningPort,  int makeOtherConnectionsPort) {
     this.serverIdentityListeningPort = serverIdentityListeningPort;
     this.makeOtherConnectionsPort = makeOtherConnectionsPort;
   }
+
+
+
 
   /** Handle Method
    * Spawns an InputThread for the 'client' (similar to SendMessageThread).
@@ -116,7 +118,7 @@ public class Peer {
         //socket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
         // socket.setOption(StandardSocketOptions.SO_LINGER, 1);
         // Note that the port number we received is the clients OUTGOING port.
-        System.out.println(ANSI_CYAN+"---> Accepted connection from another peer who's using their port number: "+ANSI_RESET+ socket.getPort());
+        System.out.println("---> Accepted connection from another peer who's using their port number: " + socket.getPort());
 
         // The connected peer's identity is a combination of their IP address and their outgoing port number
         String addressOfPeer = socket.getInetAddress().toString();
@@ -130,7 +132,7 @@ public class Peer {
         }
 
         if (bannedPeers.contains(clientIdentity)) {
-          System.out.println(ANSI_RED+"---> Oh wait -- this is a banned peer! It is not allowed to join us. Telling it to go away now."+ANSI_RESET);
+          System.out.println("---> Oh wait -- this is a banned peer! It is not allowed to join us. Telling it to go away now.");
           PrintWriter writerr = new PrintWriter(socket.getOutputStream());
           JSONWriter jsonBuilda = new JSONWriter();
           String message = "Connection refused as you are banned.";
@@ -155,11 +157,7 @@ public class Peer {
     }
   }
 
-  // TIP: Use ALT + 7 in IJ to view all methods on the sidebar.
-  // ***************************************************************************************************************
-  // ***************************************************************************************************************
-  // ***********************************     NEW METHODS FOR ASSIGNMENT 2     **************************************
-  // ***************************************************************************************************************
+
 
   /**
    * Used by the connect command from InputThread. Allows a user to connect to another peer.
@@ -193,12 +191,13 @@ public class Peer {
         writer.println(msg);
         writer.flush();
       }
-
     } catch (IOException e) {
       System.out.println("Couldn't connect to peer. Was the destination address correctly? Please try again.");
       //e.printStackTrace();
     }
   }
+
+
 
   protected synchronized void sendMigration(String hostIP, int hostListenPort, String[] roomArray) throws InterruptedException {
     try {
@@ -307,6 +306,7 @@ public class Peer {
   }
 
 
+
   /**
    * Used for Extended Feature 1: Room Migration
    * Receive incoming values and construct new rooms when appropriate. These rooms will house the new identities that
@@ -323,8 +323,7 @@ public class Peer {
 
     // Add this room to our list.
     migratedRooms.add(roomName);
-    System.out.println(migratedRooms.size());
-    System.out.println(totalRooms);
+
 
     // First check if we have received all rooms from the sender (former host).
     if (migratedRooms.size() == totalRooms) {
@@ -344,7 +343,7 @@ public class Peer {
         // If the room doesn't already exist then we can safely create it.
         if (!roomAlreadyExists) {
           currentRooms.add(new Room(room, serverIdentity));
-          System.out.println(ANSI_GREEN+"- Created room " + room + ". New owner: " + serverIdentity+ANSI_RESET);
+          System.out.println("- Created room " + room + ". New owner: " + serverIdentity);
         }
       }
 
@@ -362,6 +361,7 @@ public class Peer {
       System.out.println("---> Construction of rooms not commencing as not all rooms have been received yet.");
     }
   }
+
 
 
   protected synchronized void successfulMigrationProcedure() {
@@ -511,8 +511,6 @@ public class Peer {
 
 
 
-
-
   /**
    * If a server is acting as a client in their own room (i.e they type a message) then we need to broadcast it to
    * the other users.
@@ -606,6 +604,8 @@ public class Peer {
     }
   }
 
+
+
   protected synchronized void kickPeer (String peerToKick) {
     for (ServerConnection c : currentConnections) {
       if (peerToKick.equals(c.identity)) {
@@ -626,6 +626,8 @@ public class Peer {
     }
   }
 
+
+
   protected synchronized void displayConnectedPeers () {
     if (currentConnections.isEmpty()) {
       System.out.println("Currently no one is connected to you.");
@@ -636,6 +638,8 @@ public class Peer {
       }
     }
   }
+
+
 
   /**
    * A server can act as a client. As such, they need to be able to create their own rooms.
@@ -695,6 +699,8 @@ public class Peer {
     }
   }
 
+
+
   private synchronized void readMessage(String roomID, String msgContent, String msgIdentity) {
     // If the server is in the same room as the sender then they should be able to read the message
     if (clientCurrentRoom.equals(roomID)) {
@@ -733,9 +739,6 @@ public class Peer {
 
 
 
-
-
-
   /**
    * Send a packet to the client that discloses their identity (their outgoing port) when they initially connect to us.
    * Only we know what their outgoing port is....unless there's another way?
@@ -753,23 +756,20 @@ public class Peer {
   }
 
 
-  // ***************************************************************************************************************
-  // ***************************************************************************************************************
-  // ***************************************************************************************************************
-  // ***************************************************************************************************************
-  // ***********************************     OLD METHODS FROM ASSIGNMENT 1     *************************************
-  // ***************************************************************************************************************
 
   // Broadcast the connection of a new user.
   private synchronized void connect(ServerConnection conn) {
     currentConnections.add(conn);
   }
 
+
+
   // Broadcast the disconnection of a new user.
   private synchronized void disconnect(ServerConnection conn) {
     broadcast(String.format("%d has left the chat.\n", conn.socket.getPort()), conn);
     currentConnections.remove(conn);
   }
+
 
 
   // Rooms are strings that are stored in an arraylist. To access a particular room we need its index in the array.
@@ -786,6 +786,7 @@ public class Peer {
   }
 
 
+
   // Old method. A bit redundant but still in use.
   // Broadcast a server message (CONNECT/DISCONNECT) to everyone in a room except the ignored person (usually yourself).
   private synchronized void broadcast(String message, ServerConnection ignored) {
@@ -796,6 +797,7 @@ public class Peer {
       }
     }
   }
+
 
 
   /**
@@ -833,8 +835,6 @@ public class Peer {
       }
     }
   }
-
-
 
 
 
@@ -929,13 +929,14 @@ public class Peer {
       // Wrap this information in a RoomList JSON and send it over.
       JSONWriter jsonBuild = new JSONWriter();
       String roomList = jsonBuild.buildJsonRoomList(roomContents);
-      System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
-      System.out.println("Note: Failed to create new room as it already exists or is invalidly named. Sending reduced JSON now.");
-      System.out.format("Invalid room, reduced RoomList JSON: %s%n", roomList);
+      //System.out.format("%n"+"Sending "+"JSON string(s). Check below:%n");
+      //System.out.println("Note: Failed to create new room as it already exists or is invalidly named. Sending reduced JSON now.");
+      //System.out.format("Invalid room, reduced RoomList JSON: %s%n", roomList);
       conn.sendMessage(roomList + "\n");
     }
     return newRoomID;
   }
+
 
 
   private synchronized String getRoomContents(ServerConnection conn, String roomid) {
@@ -992,6 +993,7 @@ public class Peer {
   }
 
 
+
   private synchronized void deleteRoom(ServerConnection conn, String roomid) {
     // Get index of the room to delete. If the user sent a bogus room then the getRoomIndex method will return -1.
     JSONWriter jsonBuild1 = new JSONWriter();
@@ -1025,6 +1027,7 @@ public class Peer {
       getRoomList(conn, false, null);
     }
   }
+
 
 
   private synchronized void quit(ServerConnection conn, String roomID) {
@@ -1067,6 +1070,8 @@ public class Peer {
       System.out.println("Exception raised when closing rooms. ");
     }
   }
+
+
 
 
   /**
@@ -1121,7 +1126,7 @@ public class Peer {
           if (in != null) {
             JSONReader jRead = new JSONReader();
             jRead.readInput(in);
-            String type = jRead.getJSONType();   // Extract the value from the 'type' key field.
+            String type = jRead.getJSONType();                    // Extract the value from the 'type' key field.
             //System.out.format(ANSI_RED+"Received "+type+" JSON: "+ANSI_RESET+"%s%n", in);
 
             // The below if-else statements analyse the received JSON object type, and act accordingly.
@@ -1208,7 +1213,6 @@ public class Peer {
               String sender = jRead.getJSONMigrationSender();
               String roomName = jRead.getJSONMigrationRoomName();
               int totalRooms = Integer.parseInt(jRead.getJSONMigrationTotalRooms());
-
               handleMigratedRooms(sender, roomName, totalRooms);
             }
 
@@ -1218,7 +1222,6 @@ public class Peer {
                 successfulMigrationProcedure();
               }
             }
-
 
             // Scan through the rooms and delete rooms that have no owner AND are empty
             closeRooms(this);
@@ -1246,11 +1249,13 @@ public class Peer {
       }
     }
 
+
     public void sendMessage (String msg) {
       // System.out.format(ANSI_BLUE+"Sending JSON:"+ANSI_RESET+" %s", msg);
       writer.print(msg);
       writer.flush(); // Empty the buffer and send the data over the network.
     }
+
 
     public void close() {
       try {
