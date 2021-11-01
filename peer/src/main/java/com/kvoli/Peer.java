@@ -677,7 +677,7 @@ public class Peer {
       for (Room room : currentRooms) {
         if (room.getRoomName().equals(roomToDelete)) {
           if (room.getRoomSize() != 0) {
-            System.out.println("Moving occupants of "+roomToDelete+" to the null room.");
+            System.out.println("Moving occupants of "+roomToDelete+" to the null room. "+roomToDelete+" has been deleted.");
             for (ServerConnection c : currentConnections) {
               if (c.roomID.equals(roomToDelete)) {
                 String serverMessage = jsonBuild.buildJSONJoinRoom(c.identity, roomToDelete, "");
