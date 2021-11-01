@@ -127,9 +127,9 @@ public class Peer {
         System.out.println("\t- The identity of the peer that just connected to you is: " + clientIdentity);
         System.out.format("\t- Connected off of you on: %s:%d%n", socket.getLocalAddress(), socket.getLocalPort());
 
-        for (String a : bannedPeers) {
-          System.out.format("Banned peer: %s%n", a);
-        }
+//        for (String a : bannedPeers) {
+//          System.out.format("Banned peer: %s%n", a);
+//        }
 
         if (bannedPeers.contains(clientIdentity)) {
           System.out.println("---> Oh wait -- this is a banned peer! It is not allowed to join us. Telling it to go away now.");
@@ -542,7 +542,7 @@ public class Peer {
    */
   protected synchronized void getLocalRoomList() {
     if (currentRooms.isEmpty()) {
-      System.out.println("There are no rooms currently locally existing. #create one to get started.");
+      System.out.println("There are no rooms currently locally existing. Use #createroom to get started.");
     }
     else {
       System.out.println("Below are the rooms you are currently hosting locally:");
@@ -677,7 +677,7 @@ public class Peer {
       for (Room room : currentRooms) {
         if (room.getRoomName().equals(roomToDelete)) {
           if (room.getRoomSize() != 0) {
-            System.out.println("Moving occupants of "+roomToDelete+" to the null room.");
+            System.out.println("Moving occupants of "+roomToDelete+" to the null room. "+roomToDelete+" has been deleted.");
             for (ServerConnection c : currentConnections) {
               if (c.roomID.equals(roomToDelete)) {
                 String serverMessage = jsonBuild.buildJSONJoinRoom(c.identity, roomToDelete, "");
@@ -1036,7 +1036,7 @@ public class Peer {
       // Send RoomChange message to all clients in the room
       JSONWriter jsonBuild = new JSONWriter();
       String serverMessage = jsonBuild.buildJSONJoinRoom(conn.identity, roomID, "");
-      System.out.println(serverMessage);
+      //System.out.println(serverMessage);
       broadcastRoom(serverMessage, roomID, null, conn.identity, true);
       System.out.println(conn.identity + " disconnected. ");
 
