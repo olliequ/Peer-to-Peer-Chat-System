@@ -5,3 +5,5 @@
 
 **Name:** Oliver Quarm (oquarm)  |  **Student ID:** 834844
 
+## Project Structure
+Our code is mainly in the Peer folder. We refer to some classes in Base as well.
