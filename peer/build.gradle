@@ -34,7 +34,7 @@ test {
 }
 
 shadowJar {
-    archiveBaseName.set('chatserver')
+    archiveBaseName.set('chatpeer')
     archiveClassifier.set('')
     archiveVersion.set('')
     destinationDirectory.set(Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize().toFile())

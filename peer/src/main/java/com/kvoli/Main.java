@@ -95,7 +95,7 @@ public class Main {
 
 
             }
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("ERROR: There was an issue parsing your input. Please try again.");
