@@ -1,6 +1,8 @@
 # Decentralized Peer‐to‐Peer Chat System
 
-• A command‐line decentralized P2P chat system
+## Key Notes
+
+• This is a command‐line decentralized P2P chat system.
 
 • Allows users on different machines and networks to host chatrooms and interact with one another remotely.
 
