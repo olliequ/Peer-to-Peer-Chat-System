@@ -10,4 +10,4 @@
 
 • Decentralized and scalable, allowing for a large number of concurrent users.
 
-• The code is mainly in the `Peer` directory, however some classes (such as the Jackson JSON library) are referenced in the `Base` directory as well.
+• The code is mainly in the `peer` directory, however some classes (such as the Jackson JSON library) are referenced in the `base` directory as well.
